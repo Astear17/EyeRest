@@ -42,7 +42,7 @@ The repository becomes a lightweight monorepo: `website/` contains only Pages co
 | ID | Proposed decision | Location / owner | Reason | Assumption or risk | Related baseline IDs |
 |---|---|---|---|---|---|
 | D1 | Move static site to `website/`; upload only that path | GitHub Pages workflow | Separates public web artifact from native source | Pages setting must use GitHub Actions | B1, B5 |
-| D2 | Use system fonts and remove external font preload/stylesheet | `website/index.html`, CSS | Removes third-party font request and improves offline resilience | Typography changes slightly by OS | B2 |
+| D2 | Retain the existing Google Fonts request with local system fallbacks | `website/index.html`, CSS | Preserves the deliberate visual typography and avoids a broken fallback experience | Font delivery depends on Google Fonts availability | B2 |
 | D3 | Change visual mock pause element to non-interactive status | `website/index.html` | Matches semantics to actual behavior | No interaction is intended on a landing-page mockup | B3 |
 | D4 | Retain existing commits via `git mv`; add iOS source in a new commit | Git repository | Preserves practical web history and makes origin clear | External iOS source has no history to preserve | B4, B5 |
 | D5 | Copy iOS project verbatim under `ios/`, amend pause-state derivation only | `ios/EyeRest` | Keeps scheduling/persistence ownership intact while resolving UI state mismatch | Full iOS build requires macOS | B5, B6, B7 |
@@ -53,7 +53,7 @@ The repository becomes a lightweight monorepo: `website/` contains only Pages co
 | Review ID | Baseline / decision ID | Pressure or conflict | Finding | Action | Required design update |
 |---|---|---|---|---|---|
 | C1 | B1 / D1 | Root deployment would include iOS project | One workflow path change is smaller than exclusions or duplicated sites | rewrite | Make `website/` the sole artifact path |
-| C2 | B2 / D2 | External font calls contradict privacy/offline posture | Existing CSS can use system stacks; no new dependency needed | rewrite | Remove Google Font elements and use native stacks |
+| C2 | B2 / D2 | Removing the font changed the visual design materially | The public site’s typography is part of its intended design; system stacks remain fallbacks | keep | Retain the existing Google Font links |
 | C3 | B3 / D3 | Nonfunctional button is misleading and inaccessible | Semantics, not a new interaction, is the narrow fix | rewrite | Replace button with neutral visual element |
 | C4 | B4 / D4 | User asked to preserve history where practical | `git mv` preserves history; importing external code cannot preserve absent history | keep + merge | Retain web commit lineage and add one import commit |
 | C5 | B6 / D5 | Broad scheduler refactor cannot be compiled here | Scheduler ownership is coherent; only visible paused state is verified incorrect | defer + rewrite | Do not change scheduler; derive no next reminder when paused |
@@ -64,7 +64,7 @@ The repository becomes a lightweight monorepo: `website/` contains only Pages co
 | Iteration | Main question | New evidence | Decisions changed | Remaining uncertainty |
 |---|---|---|---|---|
 | 1 | Can the website and iOS source share root deployment? | Workflow uploads `.` | D1 | Pages source UI must be set to Actions |
-| 2 | Are website controls and dependencies truthful? | Google font links and inert button observed | D2, D3 | Browser-specific system font appearance |
+| 2 | Are website controls and dependencies truthful? | Google font links and inert button observed | D2, D3 | Font availability is mitigated by system fallbacks |
 | 3 | Is iOS scheduling safe to refactor on Windows? | Scheduler/view model boundary and lack of Xcode observed | D5, D6 | Runtime notification behavior needs macOS/device validation |
 
 ## Edge cases and validation

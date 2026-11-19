@@ -16,7 +16,7 @@ Then open the displayed local URL. No build step is required.
 
 The included workflow publishes the root of `main` to GitHub Pages. In the repository Settings, choose **Pages → Build and deployment → Source: GitHub Actions** once. Pushes to `main` will then redeploy automatically.
 
-All internal assets use relative paths, so the site works at the repository Pages base path (`/eyerest/`) without a framework-specific setting. It uses system font stacks rather than externally hosted fonts.
+All internal assets use relative paths, so the site works at the repository Pages base path (`/eyerest/`) without a framework-specific setting. Typography uses Google Fonts with system-font fallbacks.
 
 ## Planned iOS app
 
