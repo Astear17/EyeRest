@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="EyeRest is a privacy-first, offline iOS reminder app for calmer, healthier screen time." />
+    <meta name="theme-color" content="#090a0b" />
+    <title>EyeRest — A better rhythm for screen time</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="EyeRest home"><span class="brand-mark">◌</span>EyeRest</a>
+      <nav aria-label="Primary navigation">
+        <a href="#principles">Principles</a><a href="#status">Status</a><a href="https://github.com/Astear17/eyerest" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+      </nav>
+    </header>
+    <main id="main">
+      <section class="hero" id="top">
+        <div class="eyebrow"><span></span>Offline iOS wellness reminders</div>
+        <h1>Make room<br />for <em>rest.</em></h1>
+        <p class="hero-copy">A quietly capable reminder app for eye breaks, hydration, blinking, posture, and movement—designed to live entirely on your iPhone.</p>
+        <div class="hero-actions"><a class="button primary" href="https://github.com/Astear17/eyerest" target="_blank" rel="noreferrer">View the project <span aria-hidden="true">→</span></a><a class="button quiet" href="#status">See what’s in progress</a></div>
+        <div class="hero-meta"><span>Built for iOS 17+</span><span>SwiftUI</span><span>No account</span></div>
+        <div class="phone-stage" aria-label="EyeRest app concept preview">
+          <div class="phone"><div class="notch"></div><div class="screen"><div class="screen-top"><span>9:41</span><span>•••</span></div><p class="screen-label">NEXT REMINDER</p><p class="screen-time">18:24</p><p class="screen-name">Eye relaxation <span>30 min</span></p><div class="ring"><div class="ring-inner"><strong>06:42</strong><small>until a pause</small></div></div><button type="button" class="pause-demo" aria-label="Demo pause control"><span>Ⅱ</span> Pause reminders</button><div class="today"><p>TODAY</p><strong>4 <small>mindful breaks</small></strong></div></div></div>
+          <div class="stage-note note-one">A gentler rhythm.<i></i></div><div class="stage-note note-two">Always yours.<i></i></div>
+        </div>
+      </section>
+      <section class="intro rule-section"><p class="kicker">Less interruption. Better intention.</p><h2>Wellness prompts that respect your focus.</h2><p>EyeRest turns five simple health habits into reminders you can tune, pause, and trust—without turning your wellbeing into a feed.</p></section>
+      <section class="feature-grid" aria-label="Reminder categories">
+        <article><span class="num">01</span><h3>Eye relaxation</h3><p>Look up, look away, and give your focus a reset.</p><span class="default">30 min default</span></article>
+        <article><span class="num">02</span><h3>Hydration</h3><p>A small nudge to refill your glass and your attention.</p><span class="default">60 min default</span></article>
+        <article><span class="num">03</span><h3>Blinking</h3><p>A natural reset for eyes that spend their day on screens.</p><span class="default">30 min default</span></article>
+        <article><span class="num">04</span><h3>Posture</h3><p>Drop your shoulders. Reclaim a little space to breathe.</p><span class="default">60 min default</span></article>
+        <article><span class="num">05</span><h3>Movement</h3><p>Stand, stretch, or simply change the scene for a moment.</p><span class="default">90 min default</span></article>
+      </section>
+      <section class="notification-section rule-section"><div><p class="kicker">Local by design</p><h2>Your phone keeps the time.</h2></div><div class="notification-copy"><p>EyeRest will schedule notifications directly on your device. You choose each interval, message, and quiet period; the app reconciles schedules whenever preferences change or it returns to the foreground.</p><ul><li>Independent, adjustable reminder categories</li><li>Snooze and pause controls when life gets busy</li><li>Notification batches designed around iOS limits</li><li>Absolute-time countdowns that account for time-zone changes</li></ul></div></section>
+      <section class="privacy" id="principles"><div class="privacy-statement"><p class="kicker">Privacy, without qualifiers</p><h2>No profile.<br />No cloud.<br />No compromise.</h2></div><div class="privacy-list"><div><span>01</span><p>Preferences and completion history stay on device.</p></div><div><span>02</span><p>No analytics SDKs, advertising, accounts, or remote APIs.</p></div><div><span>03</span><p>Designed to remain useful without an internet connection.</p></div><div><span>04</span><p>Permissions are requested only when they make the feature work.</p></div></div></section>
+      <section class="compatibility rule-section"><p class="kicker">A native foundation</p><div class="compat-layout"><h2>Prepared for the iPhone in your hand.</h2><div><p>EyeRest is planned as a SwiftUI app for iPhone XS and newer, with iOS 17 as its deployment target. It will use native local notifications and on-device storage—no third-party runtime dependencies.</p><dl><div><dt>Platform</dt><dd>iPhone XS and newer</dd></div><div><dt>Minimum OS</dt><dd>iOS 17.0</dd></div><div><dt>Interface</dt><dd>SwiftUI · Dynamic Type · VoiceOver</dd></div><div><dt>Distribution</dt><dd>Developer signing or sideloading required</dd></div></dl></div></div></section>
+      <section class="status" id="status"><p class="kicker">Development status · November 2026</p><h2>Designed in public.<br />Built with care.</h2><div class="status-grid"><div class="status-item active"><span class="status-dot"></span><div><h3>Landing site</h3><p>Published and maintained here.</p></div><b>Now</b></div><div class="status-item"><span class="status-dot"></span><div><h3>iOS application</h3><p>Architecture and implementation documentation prepared for macOS development.</p></div><b>Planned</b></div><div class="status-item"><span class="status-dot"></span><div><h3>Device validation</h3><p>Will begin after the app builds in Xcode on macOS.</p></div><b>Planned</b></div></div></section>
+      <section class="closing"><p class="kicker">EyeRest</p><h2>Take better breaks.<br /><em>On your terms.</em></h2><a class="button primary" href="https://github.com/Astear17/eyerest" target="_blank" rel="noreferrer">Follow development <span aria-hidden="true">→</span></a></section>
+    </main>
+    <footer><a class="brand" href="#top"><span class="brand-mark">◌</span>EyeRest</a><p>Offline wellness reminders for iOS.</p><a href="https://github.com/Astear17/eyerest" target="_blank" rel="noreferrer">GitHub ↗</a></footer>
+    <script src="assets/main.js"></script>
+  </body>
+</html>
