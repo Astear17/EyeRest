@@ -4,6 +4,8 @@ import { join } from 'node:path';
 const required = [
   'website/index.html', 'website/assets/styles.css', 'website/assets/main.js',
   '.github/workflows/pages.yml', 'EyeRest.xcodeproj/project.pbxproj',
+  'EyeRest.xcodeproj/xcshareddata/xcschemes/EyeRest.xcscheme',
+  '.github/workflows/ios-build.yml',
   'EyeRest/EyeRestApp.swift', 'EyeRest/Services/NotificationService.swift',
   'EyeRest/ViewModels/AppViewModel.swift', 'docs/IOS_DEVELOPMENT.md', 'docs/IOS_BUILD.md'
 ];
@@ -12,7 +14,9 @@ for (const path of required) if (!existsSync(path)) throw new Error(`Missing req
 const website = readFileSync('website/index.html', 'utf8');
 const css = readFileSync('website/assets/styles.css', 'utf8');
 const workflow = readFileSync('.github/workflows/pages.yml', 'utf8');
+const iosBuildWorkflow = readFileSync('.github/workflows/ios-build.yml', 'utf8');
 const pbxproj = readFileSync('EyeRest.xcodeproj/project.pbxproj', 'utf8');
+const scheme = readFileSync('EyeRest.xcodeproj/xcshareddata/xcschemes/EyeRest.xcscheme', 'utf8');
 const notificationService = readFileSync('EyeRest/Services/NotificationService.swift', 'utf8');
 const appViewModel = readFileSync('EyeRest/ViewModels/AppViewModel.swift', 'utf8');
 
@@ -21,6 +25,10 @@ if (!website.includes('fonts.googleapis.com') || !website.includes('fonts.gstati
 if ((css.match(/{/g) ?? []).length !== (css.match(/}/g) ?? []).length) throw new Error('CSS braces are unbalanced.');
 if (!workflow.includes('path: website')) throw new Error('Pages workflow must publish website/.');
 if (!pbxproj.includes('PRODUCT_BUNDLE_IDENTIFIER = com.astear17.eyerest') || !pbxproj.includes('IPHONEOS_DEPLOYMENT_TARGET = 17.0')) throw new Error('iOS project settings are incorrect.');
+if (!scheme.includes('BlueprintIdentifier="300"') || !scheme.includes('BlueprintName="EyeRest"')) throw new Error('Shared EyeRest scheme does not reference the app target.');
+for (const expected of ['name: EyeRest iOS Build', 'runs-on: macos-15', 'Xcode_16.4.app', 'generic/platform=iOS', '-configuration Release', 'CODE_SIGNING_ALLOWED=NO', 'actions/upload-artifact@v4', 'retention-days: 14', 'pull_request:']) {
+  if (!iosBuildWorkflow.includes(expected)) throw new Error(`iOS build workflow is missing: ${expected}`);
+}
 if (!notificationService.includes('timeSensitive') || !notificationService.includes('pendingNotificationRequests')) throw new Error('Expected local-notification scheduling safeguards are missing.');
 if (!appViewModel.includes('guard !preferences.isPaused')) throw new Error('Paused-state presentation guard is missing.');
 

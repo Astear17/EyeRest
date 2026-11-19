@@ -1,0 +1,133 @@
+name: EyeRest iOS Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build unsigned iOS artifacts
+    runs-on: macos-15
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      ARTIFACT_DIR: ${{ github.workspace }}/artifacts
+      DERIVED_DATA: ${{ runner.temp }}/EyeRestDerivedData
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 16.4
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -d "$DEVELOPER_DIR" ]]; then
+            echo "Expected Xcode 16.4 at $DEVELOPER_DIR, but it is unavailable." >&2
+            echo "Installed Xcode applications:" >&2
+            ls -d /Applications/Xcode*.app 2>/dev/null || true
+            exit 1
+          fi
+          sudo xcode-select --switch "$DEVELOPER_DIR"
+          xcodebuild -version
+
+      - name: Discover iOS project and shared scheme
+        id: project
+        shell: bash
+        run: |
+          set -euo pipefail
+          project_path="$(find . -maxdepth 2 -type d -name '*.xcodeproj' -print -quit)"
+          if [[ -z "$project_path" ]]; then
+            echo "No .xcodeproj was found within two repository levels." >&2
+            exit 1
+          fi
+          scheme="$(xcodebuild -list -project "$project_path" -json | python3 -c '
+import json
+import sys
+schemes = json.load(sys.stdin).get("project", {}).get("schemes", [])
+if len(schemes) != 1:
+    raise SystemExit(f"Expected exactly one shared scheme, found: {schemes}")
+print(schemes[0])
+')"
+          printf 'project=%s\n' "$project_path" >> "$GITHUB_OUTPUT"
+          printf 'scheme=%s\n' "$scheme" >> "$GITHUB_OUTPUT"
+          echo "Building scheme: $scheme"
+
+      - name: Build Release app for generic iOS devices
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$ARTIFACT_DIR"
+          set -o pipefail
+          xcodebuild \
+            -project "${{ steps.project.outputs.project }}" \
+            -scheme "${{ steps.project.outputs.scheme }}" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$DERIVED_DATA" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY='' \
+            clean build 2>&1 | tee "$ARTIFACT_DIR/xcodebuild.log"
+
+      - name: Package unsigned artifacts and metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_path="$(find "$DERIVED_DATA/Build/Products/Release-iphoneos" -maxdepth 1 -type d -name '*.app' -print -quit)"
+          if [[ -z "$app_path" ]]; then
+            echo "No Release iOS app bundle was produced." >&2
+            exit 1
+          fi
+          app_name="$(basename "$app_path")"
+          product_name="${app_name%.app}"
+          (
+            cd "$(dirname "$app_path")"
+            /usr/bin/zip -qry "$ARTIFACT_DIR/${product_name}-unsigned.app.zip" "$app_name"
+          )
+          package_dir="$(mktemp -d)"
+          trap 'rm -rf "$package_dir"' EXIT
+          mkdir -p "$package_dir/Payload"
+          ditto "$app_path" "$package_dir/Payload/$app_name"
+          (
+            cd "$package_dir"
+            /usr/bin/zip -qry "$ARTIFACT_DIR/${product_name}-unsigned.ipa" Payload
+          )
+          unzip -t "$ARTIFACT_DIR/${product_name}-unsigned.ipa"
+          version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_path/Info.plist")"
+          build_number="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Info.plist")"
+          bundle_identifier="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app_path/Info.plist")"
+          python3 - "$ARTIFACT_DIR/build-metadata.json" "$product_name" "$version" "$build_number" "$bundle_identifier" "$GITHUB_SHA" <<'PY'
+          import json
+          import sys
+
+          path, product, version, build, bundle_id, sha = sys.argv[1:]
+          with open(path, "w", encoding="utf-8") as output:
+              json.dump({
+                  "product": product,
+                  "bundleIdentifier": bundle_id,
+                  "version": version,
+                  "buildNumber": build,
+                  "commit": sha,
+                  "configuration": "Release",
+                  "sdk": "iphoneos",
+                  "signing": "disabled",
+                  "ipa": "unsigned; inspection-only and not installable on a normal iPhone"
+              }, output, indent=2)
+              output.write("\n")
+          PY
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eyerest-ios-unsigned-${{ github.sha }}
+          path: ${{ env.ARTIFACT_DIR }}
+          if-no-files-found: warn
+          retention-days: 14
