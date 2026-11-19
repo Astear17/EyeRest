@@ -1,9 +1,12 @@
 # macOS and Xcode
 .DS_Store
-ios/Build/
-ios/DerivedData/
-ios/*.xcuserstate
-ios/**/*.xcuserdatad/
+Build/
+DerivedData/
+*.xcuserstate
+**/*.xcuserdatad/
+
+# Local Codex design notes
+.ai/
 
 # Local environment and signing material
 .env

@@ -10,7 +10,7 @@ Notification schedules use absolute calendar dates, not a repeating background t
 
 ## macOS/Xcode build
 
-1. Copy this folder to `D:\GitHub\EyeRest` (or your macOS working folder).
+1. Clone this repository to your macOS working folder.
 2. Open `EyeRest.xcodeproj` in Xcode 15 or later on macOS.
 3. In **Signing & Capabilities**, select your development team for device testing. The bundle identifier is `com.astear17.eyerest`.
 4. Verify the deployment target is iOS 17.0. Run on an iPhone XS using iOS 17 or iOS 18.
@@ -31,7 +31,7 @@ An unsigned archive is useful for inspection but it is **not automatically an in
 
 For a sideloadable IPA, archive with a valid Apple Development signing identity and export with an `ExportOptions.plist` suitable for `development` (or use AltStore/Sideloadly with the Xcode-produced archive). Re-signing tools require an Apple ID/development certificate; follow their current instructions. An unsigned `.ipa` can be constructed for static inspection only and cannot be installed on an iPhone.
 
-Run `Scripts/package-unsigned-ipa.sh` on macOS after the unsigned archive succeeds. It validates the `Payload/EyeRest.app` layout and writes `Build/EyeRest-unsigned.ipa`. It intentionally warns that the result is not installable.
+Run `scripts/package-unsigned-ipa.sh` on macOS after the unsigned archive succeeds. It validates the `Payload/EyeRest.app` layout and writes `Build/EyeRest-unsigned.ipa`. It intentionally warns that the result is not installable.
 
 ## iOS limitations
 

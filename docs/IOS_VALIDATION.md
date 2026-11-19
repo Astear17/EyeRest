@@ -12,7 +12,7 @@
 Run the two `xcodebuild` commands in `README.md`, then run:
 
 ```bash
-./Scripts/package-unsigned-ipa.sh Build/EyeRest.xcarchive | tee BuildLogs/package.log
+./scripts/package-unsigned-ipa.sh Build/EyeRest.xcarchive | tee BuildLogs/package.log
 unzip -t Build/EyeRest-unsigned.ipa | tee BuildLogs/ipa-integrity.log
 unzip -l Build/EyeRest-unsigned.ipa | grep 'Payload/EyeRest.app/Info.plist'
 ```
