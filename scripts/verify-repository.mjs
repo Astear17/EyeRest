@@ -24,7 +24,7 @@ if (!website.includes('assets/styles.css') || !website.includes('assets/main.js'
 if (!website.includes('fonts.googleapis.com') || !website.includes('fonts.gstatic.com')) throw new Error('Website typography resources are missing.');
 if ((css.match(/{/g) ?? []).length !== (css.match(/}/g) ?? []).length) throw new Error('CSS braces are unbalanced.');
 if (!workflow.includes('path: website')) throw new Error('Pages workflow must publish website/.');
-if (!pbxproj.includes('PRODUCT_BUNDLE_IDENTIFIER = com.astear17.eyerest') || !pbxproj.includes('IPHONEOS_DEPLOYMENT_TARGET = 17.0')) throw new Error('iOS project settings are incorrect.');
+if (!pbxproj.includes('PRODUCT_BUNDLE_IDENTIFIER = com.astear17.eyerest') || !pbxproj.includes('IPHONEOS_DEPLOYMENT_TARGET = 17.0') || !pbxproj.includes('SWIFT_VERSION = 5.9')) throw new Error('iOS project settings are incorrect.');
 if (!scheme.includes('BlueprintIdentifier="300"') || !scheme.includes('BlueprintName="EyeRest"')) throw new Error('Shared EyeRest scheme does not reference the app target.');
 for (const expected of ['name: EyeRest iOS Build', 'runs-on: macos-15', 'Xcode_16.4.app', 'generic/platform=iOS', '-configuration Release', 'CODE_SIGNING_ALLOWED=NO', 'actions/upload-artifact@v4', 'retention-days: 14', 'pull_request:']) {
   if (!iosBuildWorkflow.includes(expected)) throw new Error(`iOS build workflow is missing: ${expected}`);
