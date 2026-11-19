@@ -1,0 +1,66 @@
+// !$*UTF8*$!
+{
+ archiveVersion = 1; classes = {}; objectVersion = 56;
+ objects = {
+/* Begin PBXBuildFile section */
+  001 /* EyeRestApp.swift */ = {isa = PBXBuildFile; fileRef = 101; };
+  002 /* Reminder.swift */ = {isa = PBXBuildFile; fileRef = 102; };
+  003 /* Completion.swift */ = {isa = PBXBuildFile; fileRef = 103; };
+  004 /* PersistenceService.swift */ = {isa = PBXBuildFile; fileRef = 104; };
+  005 /* NotificationService.swift */ = {isa = PBXBuildFile; fileRef = 105; };
+  006 /* AppViewModel.swift */ = {isa = PBXBuildFile; fileRef = 106; };
+  007 /* RootView.swift */ = {isa = PBXBuildFile; fileRef = 107; };
+  008 /* HomeView.swift */ = {isa = PBXBuildFile; fileRef = 108; };
+  009 /* RemindersView.swift */ = {isa = PBXBuildFile; fileRef = 109; };
+  010 /* ReminderDetailView.swift */ = {isa = PBXBuildFile; fileRef = 110; };
+  011 /* SettingsView.swift */ = {isa = PBXBuildFile; fileRef = 111; };
+  012 /* DateFormatting.swift */ = {isa = PBXBuildFile; fileRef = 112; };
+/* End PBXBuildFile section */
+/* Begin PBXFileReference section */
+  100 = {isa = PBXFileReference; lastKnownFileType = wrapper.application; path = EyeRest.app; sourceTree = BUILT_PRODUCTS_DIR; };
+  101 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EyeRestApp.swift; sourceTree = "<group>"; };
+  102 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reminder.swift; sourceTree = "<group>"; };
+  103 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Completion.swift; sourceTree = "<group>"; };
+  104 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceService.swift; sourceTree = "<group>"; };
+  105 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+  106 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
+  107 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+  108 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+  109 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersView.swift; sourceTree = "<group>"; };
+  110 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderDetailView.swift; sourceTree = "<group>"; };
+  111 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+  112 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateFormatting.swift; sourceTree = "<group>"; };
+  113 = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+  114 = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = EyeRest.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+/* Begin PBXGroup section */
+  200 = {isa = PBXGroup; children = (201, 100); sourceTree = "<group>"; };
+  201 = {isa = PBXGroup; path = EyeRest; sourceTree = "<group>"; children = (101, 202, 203, 204, 205, 206, 113, 114); };
+  202 = {isa = PBXGroup; path = Models; sourceTree = "<group>"; children = (102,103); };
+  203 = {isa = PBXGroup; path = Services; sourceTree = "<group>"; children = (104,105); };
+  204 = {isa = PBXGroup; path = ViewModels; sourceTree = "<group>"; children = (106); };
+  205 = {isa = PBXGroup; path = Views; sourceTree = "<group>"; children = (107,108,109,110,111); };
+  206 = {isa = PBXGroup; path = Utilities; sourceTree = "<group>"; children = (112); };
+/* End PBXGroup section */
+/* Begin PBXNativeTarget section */
+  300 = {isa = PBXNativeTarget; buildConfigurationList = 401; buildPhases = (301); buildRules = (); dependencies = (); name = EyeRest; productName = EyeRest; productReference = 100; productType = "com.apple.product-type.application"; };
+/* End PBXNativeTarget section */
+/* Begin PBXProject section */
+  400 = {isa = PBXProject; attributes = { LastUpgradeCheck = 1500; TargetAttributes = { 300 = { CreatedOnToolsVersion = 15.0; }; }; }; buildConfigurationList = 402; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base); mainGroup = 200; productRefGroup = 200; projectDirPath = ""; projectRoot = ""; targets = (300); };
+/* End PBXProject section */
+/* Begin PBXSourcesBuildPhase section */
+  301 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (001,002,003,004,005,006,007,008,009,010,011,012); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+/* Begin XCBuildConfiguration section */
+  500 = {isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; }; name = Debug; };
+  501 = {isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; }; name = Release; };
+  510 = {isa = XCBuildConfiguration; buildSettings = { CODE_SIGN_ENTITLEMENTS = EyeRest/EyeRest.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = EyeRest/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.astear17.eyerest; PRODUCT_NAME = EyeRest; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 1; }; name = Debug; };
+  511 = {isa = XCBuildConfiguration; buildSettings = { CODE_SIGN_ENTITLEMENTS = EyeRest/EyeRest.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = EyeRest/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.astear17.eyerest; PRODUCT_NAME = EyeRest; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 1; }; name = Release; };
+/* End XCBuildConfiguration section */
+/* Begin XCConfigurationList section */
+  401 = {isa = XCConfigurationList; buildConfigurations = (510,511); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+  402 = {isa = XCConfigurationList; buildConfigurations = (500,501); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+ };
+ rootObject = 400;
+}

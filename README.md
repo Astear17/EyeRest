@@ -1,27 +1,27 @@
 # EyeRest
 
-The public landing site for EyeRest, an in-development offline wellness reminder app for iOS.
+EyeRest is a privacy-first, offline wellness reminder project for iPhone. This repository contains the public landing site and the native SwiftUI source in one deliberately small monorepo.
 
-## Run locally
+## Repository map
 
-This is a dependency-free static site. From the project directory, serve it with any static server, for example:
+- [`website/`](website/) — dependency-free static landing site deployed with GitHub Pages.
+- [`ios/`](ios/) — Xcode project for the planned iOS 17+ app; build it on macOS.
+- [`docs/`](docs/) — iOS development and packaging notes.
+- [`.ai/docs/design/`](.ai/docs/design/) — engineering design review records.
+- [`.github/workflows/pages.yml`](.github/workflows/pages.yml) — Pages deployment workflow.
+
+## Local verification
+
+Run the repository check from the root:
 
 ```powershell
-npx serve .
+node scripts/verify-repository.mjs
 ```
 
-Then open the displayed local URL. No build step is required.
+To preview the website:
 
-## Deploy to GitHub Pages
+```powershell
+python -m http.server 4173 --directory website
+```
 
-The included workflow publishes the root of `main` to GitHub Pages. In the repository Settings, choose **Pages → Build and deployment → Source: GitHub Actions** once. Pushes to `main` will then redeploy automatically.
-
-All internal assets use relative paths, so the site works at the repository Pages base path (`/eyerest/`) without a framework-specific setting.
-
-## Planned iOS app
-
-See [docs/IOS_DEVELOPMENT.md](docs/IOS_DEVELOPMENT.md) for the future macOS/Xcode development plan, app architecture, local notification scheduling, offline model, build requirements, and unsigned IPA caveats.
-
-## Project status
-
-The landing page is complete. The native iOS app has not yet been built or validated on macOS; its planned capabilities are deliberately labeled as planned.
+The iOS project cannot be built on Windows. On macOS, open `ios/EyeRest.xcodeproj` in Xcode and follow [`ios/README.md`](ios/README.md). An unsigned archive is not installable on a normal iPhone; valid developer signing is required.
