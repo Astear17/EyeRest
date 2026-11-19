@@ -18,10 +18,16 @@ jobs:
     env:
       DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
       ARTIFACT_DIR: ${{ github.workspace }}/artifacts
-      DERIVED_DATA: ${{ runner.temp }}/EyeRestDerivedData
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+
+      - name: Prepare build paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$ARTIFACT_DIR"
+          printf 'DERIVED_DATA=%s/EyeRestDerivedData\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
 
       - name: Select Xcode 16.4
         shell: bash
