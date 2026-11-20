@@ -92,6 +92,9 @@ if (stringCatalog.sourceLanguage !== 'en' || stringCatalog.version !== '1.0') th
 for (const [key, value] of Object.entries(stringCatalog.strings)) {
   if (value.localizations?.vi?.stringUnit?.state !== 'translated' || !value.localizations.vi.stringUnit.value) throw new Error(`Missing Vietnamese translation: ${key}`);
 }
+for (const key of ['Every %lld min · %@', 'Interval: %lld minutes', '%lld completed', '%lld seconds remaining', '%@ enabled', 'Countdown %@', 'Reminders are queued until %@. Open EyeRest to keep them going.']) {
+  if (!stringCatalog.strings[key]?.localizations?.vi?.stringUnit?.value) throw new Error(`Missing interpolated Vietnamese catalog key: ${key}`);
+}
 if (!notificationService.includes('timeSensitiveSetting') || !notificationService.includes('pendingNotificationRequests')) throw new Error('Expected local-notification scheduling safeguards are missing.');
 if (!persistenceService.includes('Array(completions.suffix(500))')) throw new Error('Completion-history persistence limit is missing.');
 if (!appViewModel.includes('guard !preferences.isPaused')) throw new Error('Paused-state presentation guard is missing.');
