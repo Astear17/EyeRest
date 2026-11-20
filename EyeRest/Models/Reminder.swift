@@ -1,6 +1,6 @@
 import Foundation
 
-enum ReminderKind: String, CaseIterable, Codable, Identifiable {
+enum ReminderKind: String, CaseIterable, Codable, Hashable, Identifiable {
     case eyeRest, hydration, blinking, posture, movement
     var id: String { rawValue }
     var title: String { switch self { case .eyeRest: return String(localized: "Eye relaxation"); case .hydration: return String(localized: "Hydration"); case .blinking: return String(localized: "Blinking"); case .posture: return String(localized: "Posture"); case .movement: return String(localized: "Movement") } }

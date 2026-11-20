@@ -6,6 +6,10 @@ const required = [
   '.github/workflows/pages.yml', 'EyeRest.xcodeproj/project.pbxproj',
   'EyeRest.xcodeproj/xcshareddata/xcschemes/EyeRest.xcscheme',
   '.github/workflows/ios-build.yml',
+  'Package.swift',
+  'Tests/EyeRestLogicTests/NotificationPlannerTests.swift',
+  'Tests/EyeRestLogicTests/PersistenceTests.swift',
+  'Tests/EyeRestLogicTests/QuietHoursTests.swift',
   'EyeRest/Resources/Localizable.xcstrings',
   'EyeRest/EyeRestApp.swift', 'EyeRest/Services/NotificationService.swift', 'EyeRest/Services/PersistenceService.swift',
   'EyeRest/ViewModels/AppViewModel.swift', 'docs/IOS_DEVELOPMENT.md', 'docs/IOS_BUILD.md'
@@ -81,7 +85,7 @@ if (!infoPlist.includes('<key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)
 for (const expected of ['<key>CFBundleName</key><string>$(PRODUCT_NAME)</string>', '<key>CFBundleInfoDictionaryVersion</key><string>6.0</string>', '<key>CFBundleDevelopmentRegion</key><string>$(DEVELOPMENT_LANGUAGE)</string>', '<key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>', '<key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>']) {
   if (!infoPlist.includes(expected)) throw new Error(`Info.plist is missing: ${expected}`);
 }
-for (const expected of ['name: EyeRest iOS Build', "'EyeRest/**'", "'Package.swift'", "'Tests/**'", 'runs-on: macos-15', 'Xcode_16.4.app', 'generic/platform=iOS', '-configuration Release', 'CODE_SIGNING_ALLOWED=NO', 'node scripts/verify-repository.mjs', 'CFBundleExecutable', 'CFBundlePackageType', 'CFBundleName', 'CFBundleInfoDictionaryVersion', 'vi.lproj/Localizable.strings', 'en.lproj/Localizable.strings', 'cancel-in-progress: true', 'actions/upload-artifact@v4', 'retention-days: 14', 'pull_request:']) {
+for (const expected of ['name: EyeRest iOS Build', "'EyeRest/**'", "'Package.swift'", "'Tests/**'", 'runs-on: macos-15', 'Xcode_16.4.app', 'swift test', 'generic/platform=iOS', '-configuration Release', 'CODE_SIGNING_ALLOWED=NO', 'node scripts/verify-repository.mjs', 'CFBundleExecutable', 'CFBundlePackageType', 'CFBundleName', 'CFBundleInfoDictionaryVersion', 'vi.lproj/Localizable.strings', 'en.lproj/Localizable.strings', 'cancel-in-progress: true', 'actions/upload-artifact@v4', 'retention-days: 14', 'pull_request:']) {
   if (!iosBuildWorkflow.includes(expected)) throw new Error(`iOS build workflow is missing: ${expected}`);
 }
 if (stringCatalog.sourceLanguage !== 'en' || stringCatalog.version !== '1.0') throw new Error('String catalog metadata is incorrect.');
