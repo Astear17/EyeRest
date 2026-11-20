@@ -1,63 +1,55 @@
-# EyeRest
+# EyeRest iOS build and distribution
 
-EyeRest is an offline SwiftUI iPhone app for eye relaxation, hydration, blinking, posture, and movement reminders. It targets iOS 17+ and is laid out for an iPhone XS (375 × 812 points) while supporting Dynamic Type and VoiceOver.
+EyeRest is an offline SwiftUI iPhone app targeting iOS 17.0 with Swift 5.9. The Xcode project has one shared `EyeRest` scheme and no external dependencies.
 
-## Architecture
+## Local macOS validation
 
-`Models` contains Codable reminder and preference models. `Services` owns local persistence and the notification queue. `ViewModels` reconciles schedules, state and completion history. `Views` is the SwiftUI interface. There are no packages, network clients, analytics SDKs, or backend dependencies.
-
-Notification schedules use absolute calendar dates, not a repeating background timer. At most eight future occurrences per enabled kind are queued (40 total at the standard five kinds), leaving room below iOS’s 64-pending-notification limit. The app removes and regenerates its own pending requests after a configuration change and whenever it becomes active. iOS cannot guarantee notifications indefinitely if the app is never opened again: open EyeRest periodically so it can replenish the batch.
-
-## macOS/Xcode build
-
-1. Clone this repository to your macOS working folder.
-2. Open `EyeRest.xcodeproj` in Xcode 15 or later on macOS.
-3. In **Signing & Capabilities**, select your development team for device testing. The bundle identifier is `com.astear17.eyerest`.
-4. Verify the deployment target is iOS 17.0. Run on an iPhone XS using iOS 17 or iOS 18.
-5. For the Time Sensitive mode, enable **Time Sensitive Notifications** under the app’s iPhone notification settings. This app never requests Critical Alerts.
-
-### Command-line validation on macOS
+Create the log directory before piping output to `tee`:
 
 ```bash
-xcodebuild -project EyeRest.xcodeproj -scheme EyeRest -sdk iphonesimulator \
-  -destination 'platform=iOS Simulator,name=iPhone 15' clean build | tee BuildLogs/simulator-build.log
+mkdir -p BuildLogs
+node scripts/verify-repository.mjs | tee BuildLogs/repository-verification.log
+swift test 2>&1 | tee BuildLogs/swift-test.log
 xcodebuild -project EyeRest.xcodeproj -scheme EyeRest -configuration Release \
-  -archivePath Build/EyeRest.xcarchive archive
+  -sdk iphoneos -destination 'generic/platform=iOS' \
+  CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' \
+  clean build 2>&1 | tee BuildLogs/release-build.log
 ```
 
-An unsigned archive is useful for inspection but it is **not automatically an installable IPA**. iOS devices require the executable to be code signed. Apple does not permit a genuinely unsigned app to be installed on a normal iPhone.
+For normal device development, select a valid Apple development team and build the same scheme onto an iOS 17+ iPhone. Do not add signing material to the repository.
 
-## GitHub Actions builds
+## GitHub Actions
 
-The repository’s **EyeRest iOS Build** workflow makes an Xcode installation unnecessary for automated compilation. It runs for pushes to `main`, pull requests that target `main`, and manual dispatches. To start it manually, open the repository’s **Actions** tab, choose **EyeRest iOS Build**, then select **Run workflow**.
+The **EyeRest iOS Build** workflow runs for relevant pushes, pull requests targeting `main`, and manual dispatch. It pins GitHub `macos-15` to `/Applications/Xcode_16.4.app`, runs the repository verifier, builds Release for generic iOS with code signing disabled, validates the processed app metadata and localization resources, packages the unsigned app and IPA, and integrity-checks the IPA. A separate job runs the Foundation-only Swift package tests.
 
-The workflow uses GitHub-hosted `macos-15`, explicitly switches to `/Applications/Xcode_16.4.app`, discovers the one tracked shared scheme, and invokes `xcodebuild` with these important settings:
+The 14-day artifact remains named `eyerest-ios-unsigned-<sha>` and contains:
 
-```bash
--configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
-CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=''
-```
+- `EyeRest-unsigned.ipa`
+- `EyeRest-unsigned.app.zip`
+- `EyeRest-Info.plist`
+- `build-metadata.json`
+- `xcodebuild.log`
 
-No developer certificate, provisioning profile, signing secret, third-party build action, or account credential is used. Each completed run retains its `eyerest-ios-unsigned-<commit>` artifact for 14 days. Download it from the run’s **Artifacts** section. It contains a zipped `.app`, `EyeRest-unsigned.ipa`, `xcodebuild.log`, and `build-metadata.json` (commit SHA, version, build number, Release configuration, SDK, and signing state).
+The IPA must contain `Payload/EyeRest.app/EyeRest`, the processed Info.plist, and compiled `en.lproj` and `vi.lproj` localization resources.
 
-`EyeRest-unsigned.ipa` is deliberately labelled as **unsigned** and is for inspection only. It has the expected `Payload/EyeRest.app` structure but cannot be installed on a normal iPhone. A development-signed archive and export, or an authorized re-signing process, is still required for a device-installable IPA.
+## Time Sensitive and sideloading
 
-### CI troubleshooting
+The unsigned CI artifact embeds no usable device signature or provisioning profile. Feather/KSign must re-sign it with valid credentials before installation. Time Sensitive delivery works only when the re-signing certificate and provisioning profile carry the capability and the user enables it in iPhone notification settings. Otherwise EyeRest deliberately schedules normal `.active` notifications. Never add a certificate, P12 password, provisioning profile, or signing secret to this workflow.
 
-- **Xcode selection failed:** the runner image may have changed. The workflow prints the Xcode applications it found; update the explicitly selected version and path together after checking GitHub’s macOS runner-image notes.
-- **Project or scheme discovery failed:** confirm `EyeRest.xcodeproj` and `EyeRest.xcodeproj/xcshareddata/xcschemes/EyeRest.xcscheme` are tracked, and that there is only one shared scheme.
-- **`xcodebuild` failed:** download the workflow’s `xcodebuild.log`; it is uploaded even when the build step fails. Fix the reported project, SDK, or Swift compiler issue and rerun the workflow.
-- **IPA will not install:** this is expected for an unsigned IPA. Use valid Apple signing for an installable build; do not add credentials to this unsigned CI workflow.
+A P12 MAC verification failure is a credential or password problem, not an IPA source-code problem. The app cannot work around an invalid P12.
 
-## IPA packaging and sideloading
+## iOS scheduling limitations
 
-For a sideloadable IPA, archive with a valid Apple Development signing identity and export with an `ExportOptions.plist` suitable for `development` (or use AltStore/Sideloadly with the Xcode-produced archive). Re-signing tools require an Apple ID/development certificate; follow their current instructions. An unsigned `.ipa` can be constructed for static inspection only and cannot be installed on an iPhone.
+- iOS controls final delivery; Focus, summaries, permissions, battery state, and system policy can delay or suppress notifications.
+- EyeRest uses absolute, non-repeating requests so quiet hours and time-zone changes can be handled explicitly.
+- At most 58 normal requests are queued, reserving six of the system's 64 slots for snoozes. Open EyeRest periodically to replenish the finite queue.
+- Snooze is one ten-minute request per reminder kind and deliberately ignores quiet hours.
+- English and Vietnamese follow the system or per-app language; changing locale causes pending notification text to be rebuilt.
+- There is no continuous background process. Countdown rendering occurs only while the app is visible.
 
-Run `scripts/package-unsigned-ipa.sh` on macOS after the unsigned archive succeeds. It validates the `Payload/EyeRest.app` layout and writes `Build/EyeRest-unsigned.ipa`. It intentionally warns that the result is not installable.
+## Troubleshooting
 
-## iOS limitations
-
-- Local notification delivery is controlled by iOS; Focus, notification summaries, disabled permissions, battery state, and system policies may defer or suppress delivery.
-- Time Sensitive delivery requires both authorization and the per-app iOS setting. It is not Critical Alerts and does not bypass all system controls.
-- There is no continuous background process. Countdown display updates only while the app is foregrounded; its value is always computed from absolute dates.
-- Snooze is a single 10-minute local notification; quiet-hours behavior applies to the normal recurring batch.
+- If Xcode selection fails, inspect the runner's installed applications and update the pinned Xcode version deliberately.
+- If compilation fails, download `xcodebuild.log` from the artifact uploaded by the failed job.
+- If the IPA fails metadata checks, inspect `EyeRest-Info.plist` and `build-metadata.json` from the same run.
+- If installation or Time Sensitive delivery fails after a green build, validate the re-signing certificate, P12 password, private key, provisioning profile, and on-device notification settings.
