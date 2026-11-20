@@ -24,6 +24,7 @@ let package = Package(
             sources: [
                 "Models/Reminder.swift",
                 "Models/Completion.swift",
+                "Models/BreakSession.swift",
                 "Services/BackupCodec.swift",
                 "Services/NotificationPlanner.swift",
                 "Services/PersistenceService.swift",
