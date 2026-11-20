@@ -6,7 +6,16 @@ enum ReminderKind: String, CaseIterable, Codable, Identifiable {
     var title: String { switch self { case .eyeRest: return "Eye relaxation"; case .hydration: return "Hydration"; case .blinking: return "Blinking"; case .posture: return "Posture"; case .movement: return "Movement" } }
     var symbol: String { switch self { case .eyeRest: return "eye"; case .hydration: return "drop"; case .blinking: return "eye.trianglebadge.exclamationmark"; case .posture: return "figure.stand"; case .movement: return "figure.walk" } }
     var defaultMinutes: Int { switch self { case .eyeRest, .blinking: return 30; case .hydration, .posture: return 60; case .movement: return 90 } }
-    var defaultMessage: String { switch self { case .eyeRest: return "Time to rest your eyes. Look into the distance for 30 seconds."; case .hydration: return "Take a moment to drink some water."; case .blinking: return "Remember to blink naturally and relax your eyes."; case .posture: return "Check your posture and relax your shoulders."; case .movement: return "Take a short movement break." } }
+    var defaultMessage: String { switch self { case .eyeRest: return "Time to rest your eyes. Look at something about 20 feet (6 m) away for 20 seconds."; case .hydration: return "Take a moment to drink some water."; case .blinking: return "Remember to blink naturally and relax your eyes."; case .posture: return "Check your posture and relax your shoulders."; case .movement: return "Take a short movement break." } }
+
+    var knownDefaultMessages: Set<String> {
+        switch self {
+        case .eyeRest:
+            return ["Time to rest your eyes. Look into the distance for 30 seconds.", "Look into the distance for 30 seconds.", defaultMessage]
+        default:
+            return [defaultMessage]
+        }
+    }
 }
 
 enum NotificationPriority: String, CaseIterable, Codable, Identifiable {
@@ -19,18 +28,77 @@ struct ReminderConfiguration: Codable, Identifiable, Equatable {
     let kind: ReminderKind
     var isEnabled: Bool
     var intervalMinutes: Int
-    var message: String
+    var customMessage: String?
     var nextFireDate: Date?
     var id: String { kind.rawValue }
-    static func `default`(_ kind: ReminderKind, from now: Date = .now) -> Self {
-        .init(kind: kind, isEnabled: true, intervalMinutes: kind.defaultMinutes, message: kind.defaultMessage, nextFireDate: Calendar.autoupdatingCurrent.date(byAdding: .minute, value: kind.defaultMinutes, to: now))
+    var message: String {
+        get { customMessage ?? kind.defaultMessage }
+        set { customMessage = Self.sanitize(newValue) }
     }
+
+    init(kind: ReminderKind, isEnabled: Bool, intervalMinutes: Int, customMessage: String?, nextFireDate: Date?) {
+        self.kind = kind
+        self.isEnabled = isEnabled
+        self.intervalMinutes = intervalMinutes
+        self.customMessage = Self.sanitize(customMessage)
+        self.nextFireDate = nextFireDate
+    }
+
+    static func `default`(_ kind: ReminderKind, from now: Date = .now) -> Self {
+        .init(kind: kind, isEnabled: true, intervalMinutes: kind.defaultMinutes, customMessage: nil, nextFireDate: Calendar.autoupdatingCurrent.date(byAdding: .minute, value: kind.defaultMinutes, to: now))
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        kind = try container.decode(ReminderKind.self, forKey: .kind)
+        isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
+        intervalMinutes = try container.decodeIfPresent(Int.self, forKey: .intervalMinutes) ?? kind.defaultMinutes
+        nextFireDate = try container.decodeIfPresent(Date.self, forKey: .nextFireDate)
+        let current = try container.decodeIfPresent(String.self, forKey: .customMessage)
+        let legacy = try decoder.container(keyedBy: LegacyCodingKeys.self).decodeIfPresent(String.self, forKey: .message)
+        let candidate = current ?? legacy
+        if let candidate, kind.knownDefaultMessages.contains(candidate.trimmingCharacters(in: .whitespacesAndNewlines)) {
+            customMessage = nil
+        } else {
+            customMessage = Self.sanitize(candidate)
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(kind, forKey: .kind)
+        try container.encode(isEnabled, forKey: .isEnabled)
+        try container.encode(intervalMinutes, forKey: .intervalMinutes)
+        try container.encodeIfPresent(Self.sanitize(customMessage), forKey: .customMessage)
+        try container.encodeIfPresent(nextFireDate, forKey: .nextFireDate)
+    }
+
+    private static func sanitize(_ value: String?) -> String? {
+        guard let value, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        return String(value.prefix(200))
+    }
+
+    private enum CodingKeys: String, CodingKey { case kind, isEnabled, intervalMinutes, customMessage, nextFireDate }
+    private enum LegacyCodingKeys: String, CodingKey { case message }
 }
 
 struct QuietHours: Codable, Equatable {
     var enabled = false
     var startMinutes = 22 * 60
     var endMinutes = 7 * 60
+
+    init(enabled: Bool = false, startMinutes: Int = 22 * 60, endMinutes: Int = 7 * 60) {
+        self.enabled = enabled
+        self.startMinutes = startMinutes
+        self.endMinutes = endMinutes
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        enabled = try container.decodeIfPresent(Bool.self, forKey: .enabled) ?? false
+        startMinutes = try container.decodeIfPresent(Int.self, forKey: .startMinutes) ?? 22 * 60
+        endMinutes = try container.decodeIfPresent(Int.self, forKey: .endMinutes) ?? 7 * 60
+    }
     func contains(_ date: Date, calendar: Calendar = .autoupdatingCurrent) -> Bool {
         guard enabled else { return false }
         guard startMinutes != endMinutes else { return false }
@@ -64,4 +132,29 @@ struct AppPreferences: Codable, Equatable {
     var isPaused = false
     enum Appearance: String, CaseIterable, Codable, Identifiable { case system, light, dark; var id: String { rawValue }; var title: String { rawValue.capitalized } }
     static func makeDefault(now: Date = .now) -> Self { .init(reminders: ReminderKind.allCases.map { .default($0, from: now) }) }
+
+    init(reminders: [ReminderConfiguration], quietHours: QuietHours = QuietHours(), priority: NotificationPriority = .timeSensitive, appearance: Appearance = .system, isPaused: Bool = false) {
+        self.reminders = reminders
+        self.quietHours = quietHours
+        self.priority = priority
+        self.appearance = appearance
+        self.isPaused = isPaused
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let decoded = try container.decodeIfPresent([LossyReminder].self, forKey: .reminders)?.compactMap(\.value) ?? []
+        var byKind: [ReminderKind: ReminderConfiguration] = [:]
+        decoded.forEach { byKind[$0.kind] = $0 }
+        reminders = ReminderKind.allCases.map { byKind[$0] ?? .default($0) }
+        quietHours = try container.decodeIfPresent(QuietHours.self, forKey: .quietHours) ?? QuietHours()
+        priority = try container.decodeIfPresent(NotificationPriority.self, forKey: .priority) ?? .timeSensitive
+        appearance = try container.decodeIfPresent(Appearance.self, forKey: .appearance) ?? .system
+        isPaused = try container.decodeIfPresent(Bool.self, forKey: .isPaused) ?? false
+    }
+
+    private struct LossyReminder: Decodable {
+        let value: ReminderConfiguration?
+        init(from decoder: Decoder) throws { value = try? ReminderConfiguration(from: decoder) }
+    }
 }
