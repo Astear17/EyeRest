@@ -3,17 +3,23 @@ import Foundation
 enum ReminderKind: String, CaseIterable, Codable, Identifiable {
     case eyeRest, hydration, blinking, posture, movement
     var id: String { rawValue }
-    var title: String { switch self { case .eyeRest: return "Eye relaxation"; case .hydration: return "Hydration"; case .blinking: return "Blinking"; case .posture: return "Posture"; case .movement: return "Movement" } }
+    var title: String { switch self { case .eyeRest: return String(localized: "Eye relaxation"); case .hydration: return String(localized: "Hydration"); case .blinking: return String(localized: "Blinking"); case .posture: return String(localized: "Posture"); case .movement: return String(localized: "Movement") } }
     var symbol: String { switch self { case .eyeRest: return "eye"; case .hydration: return "drop"; case .blinking: return "eye.trianglebadge.exclamationmark"; case .posture: return "figure.stand"; case .movement: return "figure.walk" } }
     var defaultMinutes: Int { switch self { case .eyeRest, .blinking: return 30; case .hydration, .posture: return 60; case .movement: return 90 } }
-    var defaultMessage: String { switch self { case .eyeRest: return "Time to rest your eyes. Look at something about 20 feet (6 m) away for 20 seconds."; case .hydration: return "Take a moment to drink some water."; case .blinking: return "Remember to blink naturally and relax your eyes."; case .posture: return "Check your posture and relax your shoulders."; case .movement: return "Take a short movement break." } }
+    var defaultMessage: String { switch self { case .eyeRest: return String(localized: "Time to rest your eyes. Look at something about 20 feet (6 m) away for 20 seconds."); case .hydration: return String(localized: "Take a moment to drink some water."); case .blinking: return String(localized: "Remember to blink naturally and relax your eyes."); case .posture: return String(localized: "Check your posture and relax your shoulders."); case .movement: return String(localized: "Take a short movement break.") } }
 
     var knownDefaultMessages: Set<String> {
         switch self {
         case .eyeRest:
-            return ["Time to rest your eyes. Look into the distance for 30 seconds.", "Look into the distance for 30 seconds.", defaultMessage]
-        default:
-            return [defaultMessage]
+            return ["Time to rest your eyes. Look into the distance for 30 seconds.", "Look into the distance for 30 seconds.", "Time to rest your eyes. Look at something about 20 feet (6 m) away for 20 seconds."]
+        case .hydration:
+            return ["Take a moment to drink some water."]
+        case .blinking:
+            return ["Remember to blink naturally and relax your eyes."]
+        case .posture:
+            return ["Check your posture and relax your shoulders."]
+        case .movement:
+            return ["Take a short movement break."]
         }
     }
 }
@@ -21,7 +27,7 @@ enum ReminderKind: String, CaseIterable, Codable, Identifiable {
 enum NotificationPriority: String, CaseIterable, Codable, Identifiable {
     case timeSensitive, normal, quiet
     var id: String { rawValue }
-    var title: String { switch self { case .timeSensitive: return "Time Sensitive"; case .normal: return "Normal"; case .quiet: return "Quiet" } }
+    var title: String { switch self { case .timeSensitive: return String(localized: "Time Sensitive"); case .normal: return String(localized: "Normal"); case .quiet: return String(localized: "Quiet") } }
 }
 
 struct ReminderConfiguration: Codable, Identifiable, Equatable {
@@ -130,7 +136,17 @@ struct AppPreferences: Codable, Equatable {
     var priority: NotificationPriority = .timeSensitive
     var appearance: Appearance = .system
     var isPaused = false
-    enum Appearance: String, CaseIterable, Codable, Identifiable { case system, light, dark; var id: String { rawValue }; var title: String { rawValue.capitalized } }
+    enum Appearance: String, CaseIterable, Codable, Identifiable {
+        case system, light, dark
+        var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .system: return String(localized: "System")
+            case .light: return String(localized: "Light")
+            case .dark: return String(localized: "Dark")
+            }
+        }
+    }
     static func makeDefault(now: Date = .now) -> Self { .init(reminders: ReminderKind.allCases.map { .default($0, from: now) }) }
 
     init(reminders: [ReminderConfiguration], quietHours: QuietHours = QuietHours(), priority: NotificationPriority = .timeSensitive, appearance: Appearance = .system, isPaused: Bool = false) {

@@ -69,8 +69,12 @@ struct HomeView: View {
     private var controls: some View {
         HStack(spacing: 12) {
             Button { model.togglePause() } label: {
-                Label(model.preferences.isPaused ? "Resume" : "Pause", systemImage: model.preferences.isPaused ? "play.fill" : "pause.fill")
-                    .frame(maxWidth: .infinity)
+                Label {
+                    Text(model.preferences.isPaused ? String(localized: "Resume") : String(localized: "Pause"))
+                } icon: {
+                    Image(systemName: model.preferences.isPaused ? "play.fill" : "pause.fill")
+                }
+                .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             Button { showingEyeRestSession = true } label: {
@@ -94,13 +98,13 @@ struct HomeView: View {
     }
 
     private var subtitle: String {
-        if model.preferences.isPaused { return "Reminders are paused" }
-        guard let reminder = model.nextReminder else { return "Enable a reminder to begin" }
+        if model.preferences.isPaused { return String(localized: "Reminders are paused") }
+        guard let reminder = model.nextReminder else { return String(localized: "Enable a reminder to begin") }
         return "\(reminder.kind.title) · \(reminder.nextFireDate?.eyeRestTime ?? "")"
     }
 
     private func countdownText(at date: Date) -> String {
-        if model.preferences.isPaused { return "Paused" }
+        if model.preferences.isPaused { return String(localized: "Paused") }
         guard !model.enabledReminders.isEmpty else { return "--:--:--" }
         return model.countdownText(to: model.nextDate, now: date)
     }

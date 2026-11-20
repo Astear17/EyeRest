@@ -19,7 +19,7 @@ struct EyeRestSessionView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 28) {
-                Text(completed ? "Rest complete" : "Look at something about 20 feet (6 m) away.")
+                Text(completed ? String(localized: "Rest complete") : String(localized: "Look at something about 20 feet (6 m) away."))
                     .font(.title2.weight(.semibold))
                     .multilineTextAlignment(.center)
                 TimelineView(.periodic(from: .now, by: 0.25)) { context in
@@ -35,7 +35,7 @@ struct EyeRestSessionView: View {
                     }
                     .frame(width: 190, height: 190)
                     .accessibilityLabel("Eye rest")
-                    .accessibilityValue(completed ? "Rest complete" : "\(remaining) seconds remaining")
+                    .accessibilityValue(completed ? String(localized: "Rest complete") : String(localized: "\(remaining) seconds remaining"))
                     .onChange(of: remaining) { _, value in
                         if value == 0 { finish() }
                     }
@@ -81,7 +81,7 @@ struct EyeRestSessionView: View {
         guard !completed else { return }
         completed = true
         model.complete(.eyeRest)
-        UIAccessibility.post(notification: .announcement, argument: "Rest complete")
+        UIAccessibility.post(notification: .announcement, argument: String(localized: "Rest complete"))
         finishTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             guard !Task.isCancelled else { return }

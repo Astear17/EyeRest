@@ -21,8 +21,8 @@ final class NotificationService: NSObject, ObservableObject {
     override init() { super.init(); center.delegate = self; configureCategories(); Task { await refreshAuthorization() } }
     func configureCategories() {
         let category = UNNotificationCategory(identifier: Self.categoryID, actions: [
-            UNNotificationAction(identifier: Self.doneAction, title: "Done", options: []),
-            UNNotificationAction(identifier: Self.snoozeAction, title: "Snooze 10 min", options: [])
+            UNNotificationAction(identifier: Self.doneAction, title: String(localized: "Done"), options: []),
+            UNNotificationAction(identifier: Self.snoozeAction, title: String(localized: "Snooze 10 min"), options: [])
         ], intentIdentifiers: [], options: [])
         center.setNotificationCategories([category])
     }
