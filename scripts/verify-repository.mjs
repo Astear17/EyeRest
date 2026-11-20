@@ -91,6 +91,7 @@ for (const expected of ['name: EyeRest iOS Build', "'EyeRest/**'", "'Package.swi
 if (stringCatalog.sourceLanguage !== 'en' || stringCatalog.version !== '1.0') throw new Error('String catalog metadata is incorrect.');
 for (const [key, value] of Object.entries(stringCatalog.strings)) {
   if (value.localizations?.vi?.stringUnit?.state !== 'translated' || !value.localizations.vi.stringUnit.value) throw new Error(`Missing Vietnamese translation: ${key}`);
+  if (value.localizations?.en?.stringUnit?.state !== 'translated' || value.localizations.en.stringUnit.value !== key) throw new Error(`Missing English source localization: ${key}`);
 }
 for (const key of ['Every %lld min · %@', 'Interval: %lld minutes', '%lld completed', '%lld seconds remaining', '%@ enabled', 'Countdown %@', 'Reminders are queued until %@. Open EyeRest to keep them going.']) {
   if (!stringCatalog.strings[key]?.localizations?.vi?.stringUnit?.value) throw new Error(`Missing interpolated Vietnamese catalog key: ${key}`);
