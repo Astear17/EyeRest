@@ -1,5 +1,4 @@
 import Foundation
-import UserNotifications
 
 enum ReminderKind: String, CaseIterable, Codable, Identifiable {
     case eyeRest, hydration, blinking, posture, movement
@@ -14,7 +13,6 @@ enum NotificationPriority: String, CaseIterable, Codable, Identifiable {
     case timeSensitive, normal, quiet
     var id: String { rawValue }
     var title: String { switch self { case .timeSensitive: return "Time Sensitive"; case .normal: return "Normal"; case .quiet: return "Quiet" } }
-    var interruptionLevel: UNNotificationInterruptionLevel { self == .timeSensitive ? .timeSensitive : .active }
 }
 
 struct ReminderConfiguration: Codable, Identifiable, Equatable {
@@ -35,8 +33,18 @@ struct QuietHours: Codable, Equatable {
     var endMinutes = 7 * 60
     func contains(_ date: Date, calendar: Calendar = .current) -> Bool {
         guard enabled else { return false }
+        guard startMinutes != endMinutes else { return false }
         let value = calendar.component(.hour, from: date) * 60 + calendar.component(.minute, from: date)
-        return startMinutes <= endMinutes ? (startMinutes...endMinutes).contains(value) : value >= startMinutes || value <= endMinutes
+        return startMinutes < endMinutes ? value >= startMinutes && value < endMinutes : value >= startMinutes || value < endMinutes
+    }
+    func nextAllowedDate(_ date: Date, calendar: Calendar = .current) -> Date {
+        guard contains(date, calendar: calendar) else { return date }
+        let value = calendar.component(.hour, from: date) * 60 + calendar.component(.minute, from: date)
+        var day = calendar.startOfDay(for: date)
+        if startMinutes > endMinutes, value >= startMinutes {
+            day = calendar.date(byAdding: .day, value: 1, to: day) ?? day
+        }
+        return calendar.date(byAdding: .minute, value: endMinutes, to: day) ?? date
     }
 }
 

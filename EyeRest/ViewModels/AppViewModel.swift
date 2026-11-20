@@ -31,8 +31,29 @@ final class AppViewModel: ObservableObject {
     func snooze(_ kind: ReminderKind) { guard let reminder = preferences.reminders.first(where: { $0.kind == kind }) else { return }; Task { await notifications.scheduleSnooze(kind: kind, message: reminder.message, priority: preferences.priority) } }
     func openSettingsIfNeeded() { showPermissionAlert = true }
     private func advance(_ kind: ReminderKind) { guard let i = preferences.reminders.firstIndex(where: { $0.kind == kind }) else { return }; preferences.reminders[i].nextFireDate = Calendar.current.date(byAdding: .minute, value: preferences.reminders[i].intervalMinutes, to: .now) }
-    private func normalizeNextDates() { for i in preferences.reminders.indices where preferences.reminders[i].isEnabled { if preferences.reminders[i].nextFireDate == nil || preferences.reminders[i].nextFireDate! <= .now { preferences.reminders[i].nextFireDate = Calendar.current.date(byAdding: .minute, value: preferences.reminders[i].intervalMinutes, to: .now) } } }
+    private func normalizeNextDates(now: Date = .now) {
+        for i in preferences.reminders.indices where preferences.reminders[i].isEnabled {
+            var nextDate = preferences.reminders[i].nextFireDate
+            if nextDate.map({ $0 <= now }) ?? true {
+                nextDate = Calendar.current.date(byAdding: .minute, value: preferences.reminders[i].intervalMinutes, to: now)
+            }
+            if let nextDate {
+                preferences.reminders[i].nextFireDate = preferences.quietHours.nextAllowedDate(nextDate)
+            }
+        }
+    }
     private func saveAndReschedule() { persistence.save(preferences); Task { await reconcile() } }
-    private func startClock() { tick = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in Task { @MainActor in self?.now = .now } } }
+    private func startClock() {
+        tick = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                self.now = .now
+                if let nextDate = self.nextDate, nextDate <= self.now {
+                    self.normalizeNextDates(now: self.now)
+                    self.persistence.save(self.preferences)
+                }
+            }
+        }
+    }
     private func handle(notification: Notification) { guard let kind = notification.userInfo?["kind"] as? ReminderKind, let action = notification.userInfo?["action"] as? String else { return }; if action == NotificationService.doneAction { complete(kind) } else if action == NotificationService.snoozeAction { snooze(kind) } }
 }
