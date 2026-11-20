@@ -9,6 +9,7 @@ final class AppViewModel: ObservableObject {
     @Published private(set) var authorizationStatus: UNAuthorizationStatus = .notDetermined
     @Published private(set) var isTimeSensitiveAvailable = false
     @Published private(set) var queuedUntil: Date?
+    @Published private(set) var canUndoImport = false
     @Published var showPermissionAlert = false
     private let persistence = PersistenceService()
     private let activityStore = ActivityStore()
@@ -17,6 +18,7 @@ final class AppViewModel: ObservableObject {
     private var observationTokens: [NSObjectProtocol] = []
     private var reconcileTask: Task<Void, Never>?
     private var reconcilePending = false
+    private var preImportSnapshot: (preferences: AppPreferences, activityLog: ActivityLog)?
 
     init() {
         preferences = persistence.loadPreferences()
@@ -88,6 +90,43 @@ final class AppViewModel: ObservableObject {
     }
 
     func updatePreferences(_ change: (inout AppPreferences) -> Void) { change(&preferences); saveAndReschedule() }
+
+    func backupData(appVersion: String, exportedAt: Date = .now) throws -> Data {
+        try BackupCodec.encode(
+            preferences: preferences,
+            activityLog: activityLog,
+            appVersion: appVersion,
+            exportedAt: exportedAt
+        )
+    }
+
+    func previewBackup(_ data: Data) throws -> BackupPreview { try BackupCodec.decode(data) }
+
+    func applyBackup(_ preview: BackupPreview) throws {
+        let replacementPreferences = preview.backup.settings.preferences()
+        let replacementActivity = BackupCodec.mergedActivity(current: activityLog, imported: preview.backup.activity.log)
+        let snapshot = (preferences, activityLog)
+        try activityStore.save(replacementActivity)
+        persistence.save(replacementPreferences)
+        preferences = replacementPreferences
+        activityLog = replacementActivity
+        preImportSnapshot = snapshot
+        canUndoImport = true
+        notifications.configureCategories(snoozeMinutes: preferences.snoozeMinutes)
+        Task { await reconcile() }
+    }
+
+    func undoLastImport() throws {
+        guard let snapshot = preImportSnapshot else { return }
+        try activityStore.save(snapshot.activityLog)
+        persistence.save(snapshot.preferences)
+        preferences = snapshot.preferences
+        activityLog = snapshot.activityLog
+        preImportSnapshot = nil
+        canUndoImport = false
+        notifications.configureCategories(snoozeMinutes: preferences.snoozeMinutes)
+        Task { await reconcile() }
+    }
     func togglePause() { preferences.pausedUntil = isPaused ? nil : .distantFuture; saveAndReschedule() }
 
     func resetDefaults() {

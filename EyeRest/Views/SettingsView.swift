@@ -1,10 +1,16 @@
 import SwiftUI
 import UserNotifications
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @EnvironmentObject private var model: AppViewModel
     @Environment(\.openURL) private var openURL
     @State private var showingResetConfirmation = false
+    @State private var showingExporter = false
+    @State private var showingImporter = false
+    @State private var backupDocument: BackupDocument?
+    @State private var importPreview: BackupPreview?
+    @State private var dataError: String?
 
     var body: some View {
         NavigationStack {
@@ -43,6 +49,20 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                 }
 
+                Section("Data") {
+                    Button("Export backup") { prepareExport() }
+                    Button("Import backup") { showingImporter = true }
+                    if model.canUndoImport {
+                        Button("Undo last import") {
+                            do { try model.undoLastImport() }
+                            catch { dataError = String(localized: "The previous data could not be restored.") }
+                        }
+                    }
+                    Text("Backups include settings and activity history. Notification permission and scheduled alerts are never included.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section {
                     Button("Restore default intervals", role: .destructive) { showingResetConfirmation = true }
                 } footer: {
@@ -67,11 +87,100 @@ struct SettingsView: View {
             } message: {
                 Text("Enable notifications for EyeRest in iPhone Settings to receive reminders.")
             }
+            .fileExporter(
+                isPresented: $showingExporter,
+                document: backupDocument,
+                contentType: .json,
+                defaultFilename: backupFilename
+            ) { result in
+                if case .failure = result { dataError = String(localized: "The backup could not be exported.") }
+                backupDocument = nil
+            }
+            .fileImporter(isPresented: $showingImporter, allowedContentTypes: [.json], allowsMultipleSelection: false) { result in
+                do {
+                    let urls = try result.get()
+                    guard let url = urls.first else { throw CocoaError(.fileReadNoSuchFile) }
+                    let accessing = url.startAccessingSecurityScopedResource()
+                    defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+                    importPreview = try model.previewBackup(Data(contentsOf: url))
+                } catch let error as BackupCodecError {
+                    dataError = importErrorMessage(error)
+                } catch {
+                    dataError = String(localized: "This file is not a valid EyeRest backup.")
+                }
+            }
+            .confirmationDialog("Import this backup?", isPresented: Binding(
+                get: { importPreview != nil },
+                set: { if !$0 { importPreview = nil } }
+            ), titleVisibility: .visible) {
+                Button("Import and replace settings") {
+                    guard let preview = importPreview else { return }
+                    do { try model.applyBackup(preview) }
+                    catch { dataError = String(localized: "The backup could not be imported. Your data was not changed.") }
+                    importPreview = nil
+                }
+                Button("Cancel", role: .cancel) { importPreview = nil }
+            } message: {
+                if let preview = importPreview {
+                    Text(importSummary(preview))
+                }
+            }
+            .alert("Data could not be updated", isPresented: Binding(
+                get: { dataError != nil },
+                set: { if !$0 { dataError = nil } }
+            )) {
+                Button("OK") { dataError = nil }
+            } message: {
+                Text(dataError ?? "")
+            }
         }
     }
 
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
+    }
+
+    private var backupFilename: String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.dateFormat = "yyyy-MM-dd"
+        return "EyeRest-Backup-\(formatter.string(from: .now)).json"
+    }
+
+    private func prepareExport() {
+        do {
+            backupDocument = BackupDocument(data: try model.backupData(appVersion: appVersion))
+            showingExporter = true
+        } catch {
+            dataError = String(localized: "The backup could not be exported.")
+        }
+    }
+
+    private func importSummary(_ preview: BackupPreview) -> String {
+        let range: String
+        if let earliest = preview.earliestDate, let latest = preview.latestDate {
+            range = "\(earliest.formatted(date: .abbreviated, time: .omitted)) – \(latest.formatted(date: .abbreviated, time: .omitted))"
+        } else {
+            range = String(localized: "No activity dates")
+        }
+        return String.localizedStringWithFormat(
+            String(localized: "%lld activities across %lld days\n%@"),
+            preview.eventCount,
+            preview.dailyTotalCount,
+            range
+        )
+    }
+
+    private func importErrorMessage(_ error: BackupCodecError) -> String {
+        switch error {
+        case .newerSchema:
+            return String(localized: "This backup was created by a newer version of EyeRest.")
+        case .checksumMismatch:
+            return String(localized: "This backup is damaged or has been changed.")
+        default:
+            return String(localized: "This file is not a valid EyeRest backup.")
+        }
     }
 
     private func timeBinding(start: Bool) -> Binding<Date> {
