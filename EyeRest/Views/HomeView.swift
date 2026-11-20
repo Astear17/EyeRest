@@ -68,7 +68,12 @@ struct HomeView: View {
 
     private var controls: some View {
         HStack(spacing: 12) {
-            Button { model.togglePause() } label: {
+            Menu {
+                if model.isPaused { Button("Resume reminders") { model.resumeReminders() } }
+                Button("Pause for 1 hour") { model.pause(for: 60 * 60) }
+                Button("Pause for rest of today") { model.pauseForRestOfToday() }
+                Button("Pause until I resume") { model.pause(for: nil) }
+            } label: {
                 Label {
                     Text(model.isPaused ? String(localized: "Resume") : String(localized: "Pause"))
                 } icon: {
@@ -98,7 +103,10 @@ struct HomeView: View {
     }
 
     private var subtitle: String {
-        if model.isPaused { return String(localized: "Reminders are paused") }
+        if let pausedUntil = model.preferences.pausedUntil, pausedUntil > .now {
+            if pausedUntil == .distantFuture { return String(localized: "Reminders are paused") }
+            return String.localizedStringWithFormat(String(localized: "Paused until %@"), pausedUntil.formatted(date: .omitted, time: .shortened))
+        }
         guard let reminder = model.nextReminder else { return String(localized: "Enable a reminder to begin") }
         return "\(reminder.kind.title) · \(reminder.nextFireDate?.eyeRestTime ?? "")"
     }

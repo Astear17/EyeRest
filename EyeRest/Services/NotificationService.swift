@@ -93,9 +93,12 @@ final class NotificationService: NSObject, ObservableObject {
         }
         return planned
     }
-    func scheduleSnooze(kind: ReminderKind, message: String, minutes: Int, priority: NotificationPriority) async {
+    func scheduleSnooze(kind: ReminderKind, message: String, fireDate: Date, priority: NotificationPriority) async {
         let content = UNMutableNotificationContent(); content.title = kind.title; content.body = message; content.sound = priority == .quiet ? nil : .default; content.categoryIdentifier = categoryID(for: kind); content.threadIdentifier = Self.sharedThreadID; content.summaryArgument = kind.title; content.userInfo = ["kind": kind.rawValue]; content.interruptionLevel = interruptionLevel(for: priority)
-        let request = UNNotificationRequest(identifier: snoozeID(for: kind), content: content, trigger: UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(minutes * 60), repeats: false))
+        let calendar = Calendar.autoupdatingCurrent
+        var components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: fireDate)
+        components.timeZone = calendar.timeZone
+        let request = UNNotificationRequest(identifier: snoozeID(for: kind), content: content, trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: false))
         try? await center.add(request)
     }
     func removeSnooze(kind: ReminderKind) async {

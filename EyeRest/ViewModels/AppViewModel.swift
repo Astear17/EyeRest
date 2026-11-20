@@ -81,9 +81,10 @@ final class AppViewModel: ObservableObject {
         let wasEnabled = preferences.reminders[index].isEnabled
         let previousInterval = preferences.reminders[index].intervalMinutes
         preferences.reminders[index].isEnabled = isEnabled
-        preferences.reminders[index].intervalMinutes = min(max(intervalMinutes, 5), 360)
+        let clampedInterval = min(max(intervalMinutes, 5), 360)
+        preferences.reminders[index].intervalMinutes = clampedInterval
         preferences.reminders[index].customMessage = ReminderConfiguration.normalizedCustomMessage(customMessage)
-        if previousInterval != intervalMinutes || (!wasEnabled && isEnabled) {
+        if previousInterval != clampedInterval || (!wasEnabled && isEnabled) {
             preferences.reminders[index].nextFireDate = adjustedDate(for: kind, intervalMinutes: preferences.reminders[index].intervalMinutes)
         }
         saveAndReschedule()
@@ -128,6 +129,15 @@ final class AppViewModel: ObservableObject {
         Task { await reconcile() }
     }
     func togglePause() { preferences.pausedUntil = isPaused ? nil : .distantFuture; saveAndReschedule() }
+    func pause(for interval: TimeInterval?) {
+        preferences.pausedUntil = interval.map { Date.now.addingTimeInterval($0) } ?? .distantFuture
+        saveAndReschedule()
+    }
+    func pauseForRestOfToday() {
+        preferences.pausedUntil = Calendar.autoupdatingCurrent.date(byAdding: .day, value: 1, to: Calendar.autoupdatingCurrent.startOfDay(for: .now))
+        saveAndReschedule()
+    }
+    func resumeReminders() { preferences.pausedUntil = nil; saveAndReschedule() }
 
     func resetDefaults() {
         preferences.reminders = AppPreferences.makeDefault().reminders
@@ -159,7 +169,10 @@ final class AppViewModel: ObservableObject {
         guard !isPaused,
               let minutes = preferences.snoozeMinutes,
               let reminder = preferences.reminders.first(where: { $0.kind == kind }) else { return }
-        Task { await notifications.scheduleSnooze(kind: kind, message: reminder.message, minutes: minutes, priority: preferences.priority) }
+        let calendar = Calendar.autoupdatingCurrent
+        let proposed = calendar.date(byAdding: .minute, value: minutes, to: .now) ?? .now
+        guard let fireDate = ScheduleRules.adjustedDate(proposed, kind: kind, preferences: preferences, calendar: calendar) else { return }
+        Task { await notifications.scheduleSnooze(kind: kind, message: reminder.message, fireDate: fireDate, priority: preferences.priority) }
     }
 
     func openSettingsIfNeeded() { showPermissionAlert = true }
@@ -168,6 +181,7 @@ final class AppViewModel: ObservableObject {
         await notifications.refreshAuthorization()
         authorizationStatus = notifications.authorizationStatus
         isTimeSensitiveAvailable = notifications.timeSensitiveSetting == .enabled
+        if let pausedUntil = preferences.pausedUntil, pausedUntil <= .now { preferences.pausedUntil = nil }
         normalizeNextDates()
         persistence.save(preferences)
         guard canScheduleNotifications else {
@@ -184,7 +198,7 @@ final class AppViewModel: ObservableObject {
     private func adjustedDate(for kind: ReminderKind, intervalMinutes: Int, now: Date = .now) -> Date {
         let calendar = Calendar.autoupdatingCurrent
         let proposed = calendar.date(byAdding: .minute, value: intervalMinutes, to: now) ?? now
-        return preferences.quietHours.nextAllowedDate(proposed, stagger: kind.quietHoursStagger, calendar: calendar)
+        return ScheduleRules.adjustedDate(proposed, kind: kind, preferences: preferences, calendar: calendar) ?? proposed
     }
 
     private func advance(_ kind: ReminderKind) {
@@ -200,7 +214,7 @@ final class AppViewModel: ObservableObject {
                 nextDate = calendar.date(byAdding: .minute, value: preferences.reminders[index].intervalMinutes, to: now)
             }
             if let nextDate {
-                preferences.reminders[index].nextFireDate = preferences.quietHours.nextAllowedDate(nextDate, stagger: preferences.reminders[index].kind.quietHoursStagger, calendar: calendar)
+                preferences.reminders[index].nextFireDate = ScheduleRules.adjustedDate(nextDate, kind: preferences.reminders[index].kind, preferences: preferences, calendar: calendar)
             }
         }
     }

@@ -42,6 +42,40 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Schedule") {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack {
+                            ForEach(1...7, id: \.self) { weekday in
+                                Button {
+                                    model.updatePreferences { preferences in
+                                        if preferences.activeDays.contains(weekday), preferences.activeDays.count > 1 { preferences.activeDays.remove(weekday) }
+                                        else { preferences.activeDays.insert(weekday) }
+                                    }
+                                } label: {
+                                    HStack(spacing: 3) {
+                                        if model.preferences.activeDays.contains(weekday) { Image(systemName: "checkmark") }
+                                        Text(Calendar.autoupdatingCurrent.shortWeekdaySymbols[weekday - 1])
+                                    }
+                                        .frame(minWidth: 36, minHeight: 44)
+                                }
+                                .buttonStyle(.bordered)
+                                .buttonBorderShape(.capsule)
+                                .tint(model.preferences.activeDays.contains(weekday) ? .accentColor : .secondary)
+                            }
+                        }
+                    }
+                    Button("Work week") {
+                        model.updatePreferences {
+                            $0.activeDays = [2, 3, 4, 5, 6]
+                            $0.quietHours = QuietHours(enabled: true, startMinutes: 18 * 60, endMinutes: 9 * 60)
+                        }
+                    }
+                    Picker("Snooze", selection: Binding(get: { model.preferences.snoozeMinutes }, set: { value in model.updatePreferences { $0.snoozeMinutes = value } })) {
+                        Text("Off").tag(Int?.none)
+                        ForEach([5, 10, 15], id: \.self) { Text("\($0) minutes").tag(Int?.some($0)) }
+                    }
+                }
+
                 Section("Appearance") {
                     Picker("Theme", selection: Binding(get: { model.preferences.appearance }, set: { value in model.updatePreferences { $0.appearance = value } })) {
                         ForEach(AppPreferences.Appearance.allCases) { Text($0.title).tag($0) }

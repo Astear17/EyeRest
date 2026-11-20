@@ -26,7 +26,8 @@ let package = Package(
                 "Models/Completion.swift",
                 "Services/BackupCodec.swift",
                 "Services/NotificationPlanner.swift",
-                "Services/PersistenceService.swift"
+                "Services/PersistenceService.swift",
+                "Services/ScheduleRules.swift"
             ]
         ),
         .testTarget(
