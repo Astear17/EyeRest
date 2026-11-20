@@ -14,7 +14,7 @@ enum NotificationPlanner {
     static let guaranteedPerKind = 3
 
     static func plan(preferences: AppPreferences, now: Date, calendar: Calendar = .autoupdatingCurrent) -> [PlannedNotification] {
-        guard !preferences.isPaused else { return [] }
+        guard preferences.pausedUntil.map({ $0 <= now }) ?? true else { return [] }
         let enabled = ReminderKind.allCases.compactMap { kind in
             preferences.reminders.first { $0.kind == kind && $0.isEnabled }
         }

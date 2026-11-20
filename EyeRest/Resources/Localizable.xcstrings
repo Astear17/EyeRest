@@ -1,6 +1,7 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%u more reminders" : { "localizations" : { "vi" : { "stringUnit" : { "state" : "translated", "value" : "Thêm %u nhắc nhở" } }, "en" : { "stringUnit" : { "state" : "translated", "value" : "%u more reminders" } } } },
     "%@ enabled" : { "localizations" : { "vi" : { "stringUnit" : { "state" : "translated", "value" : "Bật %@" } }, "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ enabled" } } } },
     "%lld completed" : { "localizations" : { "vi" : { "stringUnit" : { "state" : "translated", "value" : "Đã hoàn thành %lld" } }, "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld completed" } } } },
     "%lld seconds remaining" : { "localizations" : { "vi" : { "stringUnit" : { "state" : "translated", "value" : "Còn %lld giây" } }, "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld seconds remaining" } } } },
@@ -59,6 +60,7 @@
     "Resume" : { "localizations" : { "vi" : { "stringUnit" : { "state" : "translated", "value" : "Tiếp tục" } }, "en" : { "stringUnit" : { "state" : "translated", "value" : "Resume" } } } },
     "Settings" : { "localizations" : { "vi" : { "stringUnit" : { "state" : "translated", "value" : "Cài đặt" } }, "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings" } } } },
     "Snooze 10 min" : { "localizations" : { "vi" : { "stringUnit" : { "state" : "translated", "value" : "Báo lại sau 10 phút" } }, "en" : { "stringUnit" : { "state" : "translated", "value" : "Snooze 10 min" } } } },
+    "Snooze %lld min" : { "localizations" : { "vi" : { "stringUnit" : { "state" : "translated", "value" : "Báo lại sau %lld phút" } }, "en" : { "stringUnit" : { "state" : "translated", "value" : "Snooze %lld min" } } } },
     "Start" : { "localizations" : { "vi" : { "stringUnit" : { "state" : "translated", "value" : "Bắt đầu" } }, "en" : { "stringUnit" : { "state" : "translated", "value" : "Start" } } } },
     "System" : { "localizations" : { "vi" : { "stringUnit" : { "state" : "translated", "value" : "Theo hệ thống" } }, "en" : { "stringUnit" : { "state" : "translated", "value" : "System" } } } },
     "Take a moment to drink some water." : { "localizations" : { "vi" : { "stringUnit" : { "state" : "translated", "value" : "Hãy dừng lại một chút để uống nước." } }, "en" : { "stringUnit" : { "state" : "translated", "value" : "Take a moment to drink some water." } } } },

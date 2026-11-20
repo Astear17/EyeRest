@@ -70,9 +70,9 @@ struct HomeView: View {
         HStack(spacing: 12) {
             Button { model.togglePause() } label: {
                 Label {
-                    Text(model.preferences.isPaused ? String(localized: "Resume") : String(localized: "Pause"))
+                    Text(model.isPaused ? String(localized: "Resume") : String(localized: "Pause"))
                 } icon: {
-                    Image(systemName: model.preferences.isPaused ? "play.fill" : "pause.fill")
+                    Image(systemName: model.isPaused ? "play.fill" : "pause.fill")
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -98,13 +98,13 @@ struct HomeView: View {
     }
 
     private var subtitle: String {
-        if model.preferences.isPaused { return String(localized: "Reminders are paused") }
+        if model.isPaused { return String(localized: "Reminders are paused") }
         guard let reminder = model.nextReminder else { return String(localized: "Enable a reminder to begin") }
         return "\(reminder.kind.title) · \(reminder.nextFireDate?.eyeRestTime ?? "")"
     }
 
     private func countdownText(at date: Date) -> String {
-        if model.preferences.isPaused { return String(localized: "Paused") }
+        if model.isPaused { return String(localized: "Paused") }
         guard !model.enabledReminders.isEmpty else { return "--:--:--" }
         return model.countdownText(to: model.nextDate, now: date)
     }

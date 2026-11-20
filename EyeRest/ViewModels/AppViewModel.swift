@@ -5,12 +5,13 @@ import UserNotifications
 @MainActor
 final class AppViewModel: ObservableObject {
     @Published private(set) var preferences: AppPreferences
-    @Published private(set) var completions: [Completion]
+    @Published private(set) var activityLog: ActivityLog
     @Published private(set) var authorizationStatus: UNAuthorizationStatus = .notDetermined
     @Published private(set) var isTimeSensitiveAvailable = false
     @Published private(set) var queuedUntil: Date?
     @Published var showPermissionAlert = false
     private let persistence = PersistenceService()
+    private let activityStore = ActivityStore()
     private let notifications = NotificationService.shared
     private var tick: Timer?
     private var observationTokens: [NSObjectProtocol] = []
@@ -19,7 +20,7 @@ final class AppViewModel: ObservableObject {
 
     init() {
         preferences = persistence.loadPreferences()
-        completions = persistence.loadCompletions()
+        activityLog = activityStore.load()
         notifications.actionHandler = { [weak self] kind, action in self?.handle(kind: kind, action: action) }
         observeSystemChanges()
         startClock()
@@ -31,9 +32,10 @@ final class AppViewModel: ObservableObject {
     }
 
     var enabledReminders: [ReminderConfiguration] { preferences.reminders.filter(\.isEnabled) }
-    var nextReminder: ReminderConfiguration? { guard !preferences.isPaused else { return nil }; return enabledReminders.compactMap { item in item.nextFireDate.map { (item, $0) } }.min { $0.1 < $1.1 }?.0 }
+    var isPaused: Bool { preferences.pausedUntil.map { $0 > .now } == true }
+    var nextReminder: ReminderConfiguration? { guard !isPaused else { return nil }; return enabledReminders.compactMap { item in item.nextFireDate.map { (item, $0) } }.min { $0.1 < $1.1 }?.0 }
     var nextDate: Date? { nextReminder?.nextFireDate }
-    var todayCount: Int { completions.filter { Calendar.autoupdatingCurrent.isDateInToday($0.completedAt) }.count }
+    var todayCount: Int { activityLog.todayCount() }
     var canScheduleNotifications: Bool { authorizationStatus == .authorized || authorizationStatus == .provisional || authorizationStatus == .ephemeral }
 
     func countdownText(to date: Date?, now: Date) -> String {
@@ -86,16 +88,26 @@ final class AppViewModel: ObservableObject {
     }
 
     func updatePreferences(_ change: (inout AppPreferences) -> Void) { change(&preferences); saveAndReschedule() }
-    func togglePause() { preferences.isPaused.toggle(); saveAndReschedule() }
+    func togglePause() { preferences.pausedUntil = isPaused ? nil : .distantFuture; saveAndReschedule() }
 
     func resetDefaults() {
         preferences.reminders = AppPreferences.makeDefault().reminders
         saveAndReschedule()
     }
 
-    func complete(_ kind: ReminderKind) {
-        completions.append(Completion(kind: kind))
-        persistence.save(completions: completions)
+    func complete(
+        _ kind: ReminderKind,
+        source: ActivitySource = .manual,
+        durationSeconds: Int = 0,
+        activityID: String? = nil
+    ) {
+        activityLog.append(ActivityEvent(
+            kind: kind,
+            activityID: activityID,
+            durationSeconds: durationSeconds,
+            source: source
+        ))
+        try? activityStore.save(activityLog)
         advance(kind)
         persistence.save(preferences)
         Task {
@@ -105,8 +117,10 @@ final class AppViewModel: ObservableObject {
     }
 
     func snooze(_ kind: ReminderKind) {
-        guard let reminder = preferences.reminders.first(where: { $0.kind == kind }) else { return }
-        Task { await notifications.scheduleSnooze(kind: kind, message: reminder.message, priority: preferences.priority) }
+        guard !isPaused,
+              let minutes = preferences.snoozeMinutes,
+              let reminder = preferences.reminders.first(where: { $0.kind == kind }) else { return }
+        Task { await notifications.scheduleSnooze(kind: kind, message: reminder.message, minutes: minutes, priority: preferences.priority) }
     }
 
     func openSettingsIfNeeded() { showPermissionAlert = true }
@@ -176,14 +190,15 @@ final class AppViewModel: ObservableObject {
         })
         observationTokens.append(center.addObserver(forName: NSLocale.currentLocaleDidChangeNotification, object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in
-                self?.notifications.configureCategories()
-                await self?.reconcile()
+                guard let self else { return }
+                self.notifications.configureCategories(snoozeMinutes: self.preferences.snoozeMinutes)
+                await self.reconcile()
             }
         })
     }
 
     private func handle(kind: ReminderKind, action: String) {
-        if action == NotificationService.doneAction { complete(kind) }
+        if action == NotificationService.doneAction { complete(kind, source: .notificationAction) }
         else if action == NotificationService.snoozeAction { snooze(kind) }
     }
 }

@@ -4,7 +4,7 @@ import XCTest
 final class NotificationPlannerTests: XCTestCase {
     func testPausedReturnsEmpty() {
         var preferences = AppPreferences.makeDefault()
-        preferences.isPaused = true
+        preferences.pausedUntil = .distantFuture
         XCTAssertTrue(NotificationPlanner.plan(preferences: preferences, now: Date()).isEmpty)
     }
 

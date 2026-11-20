@@ -131,11 +131,19 @@ extension ReminderKind {
 }
 
 struct AppPreferences: Codable, Equatable {
+    static let currentSchemaVersion = 2
+    static let allWeekdays = Set(1...7)
+
+    var schemaVersion: Int
     var reminders: [ReminderConfiguration]
     var quietHours = QuietHours()
     var priority: NotificationPriority = .timeSensitive
     var appearance: Appearance = .system
-    var isPaused = false
+    var pausedUntil: Date?
+    var activeDays: Set<Int>
+    var snoozeMinutes: Int?
+    var hapticsEnabled: Bool
+    var hasCompletedWelcome: Bool
     enum Appearance: String, CaseIterable, Codable, Identifiable {
         case system, light, dark
         var id: String { rawValue }
@@ -147,18 +155,38 @@ struct AppPreferences: Codable, Equatable {
             }
         }
     }
-    static func makeDefault(now: Date = .now) -> Self { .init(reminders: ReminderKind.allCases.map { .default($0, from: now) }) }
+    static func makeDefault(now: Date = .now) -> Self {
+        .init(reminders: ReminderKind.allCases.map { .default($0, from: now) })
+    }
 
-    init(reminders: [ReminderConfiguration], quietHours: QuietHours = QuietHours(), priority: NotificationPriority = .timeSensitive, appearance: Appearance = .system, isPaused: Bool = false) {
+    init(
+        schemaVersion: Int = AppPreferences.currentSchemaVersion,
+        reminders: [ReminderConfiguration],
+        quietHours: QuietHours = QuietHours(),
+        priority: NotificationPriority = .timeSensitive,
+        appearance: Appearance = .system,
+        pausedUntil: Date? = nil,
+        activeDays: Set<Int> = AppPreferences.allWeekdays,
+        snoozeMinutes: Int? = nil,
+        hapticsEnabled: Bool = true,
+        hasCompletedWelcome: Bool = false
+    ) {
+        self.schemaVersion = schemaVersion
         self.reminders = reminders
         self.quietHours = quietHours
         self.priority = priority
         self.appearance = appearance
-        self.isPaused = isPaused
+        self.pausedUntil = pausedUntil
+        let validDays = Set(activeDays.filter { (1...7).contains($0) })
+        self.activeDays = validDays.isEmpty ? Self.allWeekdays : validDays
+        self.snoozeMinutes = snoozeMinutes
+        self.hapticsEnabled = hapticsEnabled
+        self.hasCompletedWelcome = hasCompletedWelcome
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
         let decoded = try container.decodeIfPresent([LossyReminder].self, forKey: .reminders)?.compactMap(\.value) ?? []
         var byKind: [ReminderKind: ReminderConfiguration] = [:]
         decoded.forEach { byKind[$0.kind] = $0 }
@@ -166,7 +194,35 @@ struct AppPreferences: Codable, Equatable {
         quietHours = try container.decodeIfPresent(QuietHours.self, forKey: .quietHours) ?? QuietHours()
         priority = try container.decodeIfPresent(NotificationPriority.self, forKey: .priority) ?? .timeSensitive
         appearance = try container.decodeIfPresent(Appearance.self, forKey: .appearance) ?? .system
-        isPaused = try container.decodeIfPresent(Bool.self, forKey: .isPaused) ?? false
+        pausedUntil = try container.decodeIfPresent(Date.self, forKey: .pausedUntil)
+        if pausedUntil == nil, try container.decodeIfPresent(Bool.self, forKey: .isPaused) == true {
+            pausedUntil = .distantFuture
+        }
+        let decodedDays = try container.decodeIfPresent(Set<Int>.self, forKey: .activeDays) ?? Self.allWeekdays
+        let validDays = Set(decodedDays.filter { (1...7).contains($0) })
+        activeDays = validDays.isEmpty ? Self.allWeekdays : validDays
+        snoozeMinutes = try container.decodeIfPresent(Int.self, forKey: .snoozeMinutes)
+        hapticsEnabled = try container.decodeIfPresent(Bool.self, forKey: .hapticsEnabled) ?? true
+        hasCompletedWelcome = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedWelcome) ?? false
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(Self.currentSchemaVersion, forKey: .schemaVersion)
+        try container.encode(reminders, forKey: .reminders)
+        try container.encode(quietHours, forKey: .quietHours)
+        try container.encode(priority, forKey: .priority)
+        try container.encode(appearance, forKey: .appearance)
+        try container.encodeIfPresent(pausedUntil, forKey: .pausedUntil)
+        try container.encode(activeDays, forKey: .activeDays)
+        try container.encodeIfPresent(snoozeMinutes, forKey: .snoozeMinutes)
+        try container.encode(hapticsEnabled, forKey: .hapticsEnabled)
+        try container.encode(hasCompletedWelcome, forKey: .hasCompletedWelcome)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion, reminders, quietHours, priority, appearance, pausedUntil, activeDays
+        case snoozeMinutes, hapticsEnabled, hasCompletedWelcome, isPaused
     }
 
     private struct LossyReminder: Decodable {

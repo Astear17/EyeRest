@@ -3,7 +3,7 @@ import XCTest
 @testable import EyeRestLogic
 
 final class PersistenceTests: XCTestCase {
-    func testVersionOnePreferencesPreserveSettingsAndMigrateMessages() throws {
+    func testVersionOnePreferencesPreserveSettingsAndMigrateSchemaPauseAndWelcome() throws {
         let defaults = makeDefaults()
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
         let reminders = ReminderKind.allCases.map { kind in
@@ -23,59 +23,70 @@ final class PersistenceTests: XCTestCase {
             isPaused: true
         )
         defaults.set(try JSONEncoder().encode(legacy), forKey: "EyeRest.preferences.v1")
+
         let loaded = PersistenceService(defaults: defaults).loadPreferences()
+
+        XCTAssertEqual(loaded.schemaVersion, 2)
         XCTAssertEqual(loaded.quietHours, legacy.quietHours)
         XCTAssertEqual(loaded.priority, .quiet)
         XCTAssertEqual(loaded.appearance, .dark)
-        XCTAssertTrue(loaded.isPaused)
+        XCTAssertEqual(loaded.pausedUntil, Date.distantFuture)
+        XCTAssertEqual(loaded.activeDays, AppPreferences.allWeekdays)
+        XCTAssertNil(loaded.snoozeMinutes)
+        XCTAssertTrue(loaded.hapticsEnabled)
+        XCTAssertTrue(loaded.hasCompletedWelcome)
         XCTAssertEqual(loaded.reminders.first { $0.kind == .hydration }?.customMessage, "My bottle reminder")
         XCTAssertNil(loaded.reminders.first { $0.kind == .eyeRest }?.customMessage)
-        XCTAssertNil(loaded.reminders.first { $0.kind == .movement }?.customMessage)
         XCTAssertFalse(loaded.reminders.first { $0.kind == .movement }!.isEnabled)
     }
 
-    func testUnknownReminderIsDroppedMissingKindIsAddedAndMissingFieldDefaults() throws {
+    func testFreshInstallHasNotCompletedWelcome() {
+        let loaded = PersistenceService(defaults: makeDefaults()).loadPreferences()
+        XCTAssertEqual(loaded.schemaVersion, 2)
+        XCTAssertFalse(loaded.hasCompletedWelcome)
+    }
+
+    func testVersionTwoWelcomeChoiceIsPreserved() throws {
+        let defaults = makeDefaults()
+        var preferences = AppPreferences.makeDefault()
+        preferences.hasCompletedWelcome = false
+        defaults.set(try JSONEncoder().encode(preferences), forKey: "EyeRest.preferences.v1")
+        XCTAssertFalse(PersistenceService(defaults: defaults).loadPreferences().hasCompletedWelcome)
+    }
+
+    func testUnknownReminderIsDroppedMissingKindIsAddedAndEmptyActiveDaysAreRepaired() throws {
         let defaults = makeDefaults()
         var preferences = AppPreferences.makeDefault()
         preferences.reminders[0].customMessage = "Custom eye text"
         let encoded = try JSONEncoder().encode(preferences)
         var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
         object.removeValue(forKey: "priority")
+        object["activeDays"] = []
         var reminders = try XCTUnwrap(object["reminders"] as? [[String: Any]])
         reminders.removeAll { ($0["kind"] as? String) == ReminderKind.movement.rawValue }
         reminders.append(["kind": "futureReminder", "isEnabled": true, "intervalMinutes": 10])
         object["reminders"] = reminders
         defaults.set(try JSONSerialization.data(withJSONObject: object), forKey: "EyeRest.preferences.v1")
+
         let loaded = PersistenceService(defaults: defaults).loadPreferences()
+
         XCTAssertEqual(loaded.reminders.map(\.kind), ReminderKind.allCases)
         XCTAssertEqual(loaded.priority, .timeSensitive)
+        XCTAssertEqual(loaded.activeDays, AppPreferences.allWeekdays)
         XCTAssertEqual(loaded.reminders.first { $0.kind == .eyeRest }?.customMessage, "Custom eye text")
         XCTAssertEqual(loaded.reminders.first { $0.kind == .movement }?.intervalMinutes, ReminderKind.movement.defaultMinutes)
     }
 
-    func testCorruptPreferencesReturnDefaultsAndCreateBackup() {
+    func testCorruptPreferencesReturnExistingUserDefaultsAndCreateBackup() {
         let defaults = makeDefaults()
         let corrupt = Data("not-json".utf8)
         defaults.set(corrupt, forKey: "EyeRest.preferences.v1")
+
         let loaded = PersistenceService(defaults: defaults).loadPreferences()
+
         XCTAssertEqual(loaded.reminders.map(\.kind), ReminderKind.allCases)
+        XCTAssertTrue(loaded.hasCompletedWelcome)
         XCTAssertEqual(defaults.data(forKey: "EyeRest.preferences.v1.corrupt"), corrupt)
-    }
-
-    func testCompletionsDecodeLossilyAndTotallyCorruptDataIsBackedUp() throws {
-        let defaults = makeDefaults()
-        let completion = Completion(kind: .posture, completedAt: Date(timeIntervalSinceReferenceDate: 800_000_000))
-        let validObject = try JSONSerialization.jsonObject(with: JSONEncoder().encode(completion))
-        defaults.set(try JSONSerialization.data(withJSONObject: [validObject, ["bad": true]]), forKey: "EyeRest.completions.v1")
-        let service = PersistenceService(defaults: defaults)
-        let loaded = service.loadCompletions()
-        XCTAssertEqual(loaded.count, 1)
-        XCTAssertEqual(loaded.first?.kind, .posture)
-
-        let corrupt = Data("broken".utf8)
-        defaults.set(corrupt, forKey: "EyeRest.completions.v1")
-        XCTAssertTrue(service.loadCompletions().isEmpty)
-        XCTAssertEqual(defaults.data(forKey: "EyeRest.completions.v1.corrupt"), corrupt)
     }
 
     private func makeDefaults() -> UserDefaults {

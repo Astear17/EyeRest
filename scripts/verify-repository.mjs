@@ -9,6 +9,7 @@ const required = [
   'Package.swift',
   'Tests/EyeRestLogicTests/NotificationPlannerTests.swift',
   'Tests/EyeRestLogicTests/PersistenceTests.swift',
+  'Tests/EyeRestLogicTests/ActivityLogTests.swift',
   'Tests/EyeRestLogicTests/QuietHoursTests.swift',
   'EyeRest/Resources/Localizable.xcstrings',
   'EyeRest/EyeRestApp.swift', 'EyeRest/Services/NotificationService.swift', 'EyeRest/Services/PersistenceService.swift',
@@ -102,12 +103,12 @@ for (const [key, value] of Object.entries(stringCatalog.strings)) {
   if (value.localizations?.vi?.stringUnit?.state !== 'translated' || !value.localizations.vi.stringUnit.value) throw new Error(`Missing Vietnamese translation: ${key}`);
   if (value.localizations?.en?.stringUnit?.state !== 'translated' || value.localizations.en.stringUnit.value !== key) throw new Error(`Missing English source localization: ${key}`);
 }
-for (const key of ['Every %lld min · %@', 'Interval: %lld minutes', '%lld completed', '%lld seconds remaining', '%@ enabled', 'Countdown %@', 'Reminders are queued until %@. Open EyeRest to keep them going.']) {
+for (const key of ['Every %lld min · %@', 'Interval: %lld minutes', '%lld completed', '%lld seconds remaining', '%@ enabled', 'Countdown %@', 'Reminders are queued until %@. Open EyeRest to keep them going.', 'Snooze %lld min', '%u more reminders']) {
   if (!stringCatalog.strings[key]?.localizations?.vi?.stringUnit?.value) throw new Error(`Missing interpolated Vietnamese catalog key: ${key}`);
 }
 if (!notificationService.includes('timeSensitiveSetting') || !notificationService.includes('pendingNotificationRequests')) throw new Error('Expected local-notification scheduling safeguards are missing.');
-if (!persistenceService.includes('Array(completions.suffix(500))')) throw new Error('Completion-history persistence limit is missing.');
-if (!appViewModel.includes('guard !preferences.isPaused')) throw new Error('Paused-state presentation guard is missing.');
+if (!persistenceService.includes('hasCompletedWelcome = true')) throw new Error('Existing-user welcome migration is missing.');
+if (!appViewModel.includes('activityStore.save(activityLog)')) throw new Error('File-backed activity persistence is missing.');
 
 for (const filename of ['AppIcon.png', 'AppIcon-Dark.png', 'AppIcon-Tinted.png']) {
   const path = join('EyeRest', 'Assets.xcassets', 'AppIcon.appiconset', filename);
