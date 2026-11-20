@@ -35,7 +35,7 @@ final class QuietHoursTests: XCTestCase {
         let staggered = quiet.nextAllowedDate(input, stagger: 12 * 60, calendar: calendar)
         XCTAssertEqual(calendar.component(.hour, from: staggered), 7)
         XCTAssertEqual(calendar.component(.minute, from: staggered), 12)
-        let reentering = quiet.nextAllowedDate(input, stagger: 16 * 60, calendar: calendar)
+        let reentering = quiet.nextAllowedDate(input, stagger: 16 * 60 * 60, calendar: calendar)
         XCTAssertEqual(calendar.component(.hour, from: reentering), 7)
         XCTAssertEqual(calendar.component(.minute, from: reentering), 0)
     }
