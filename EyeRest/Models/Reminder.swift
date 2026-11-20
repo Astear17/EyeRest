@@ -23,7 +23,7 @@ struct ReminderConfiguration: Codable, Identifiable, Equatable {
     var nextFireDate: Date?
     var id: String { kind.rawValue }
     static func `default`(_ kind: ReminderKind, from now: Date = .now) -> Self {
-        .init(kind: kind, isEnabled: true, intervalMinutes: kind.defaultMinutes, message: kind.defaultMessage, nextFireDate: Calendar.current.date(byAdding: .minute, value: kind.defaultMinutes, to: now))
+        .init(kind: kind, isEnabled: true, intervalMinutes: kind.defaultMinutes, message: kind.defaultMessage, nextFireDate: Calendar.autoupdatingCurrent.date(byAdding: .minute, value: kind.defaultMinutes, to: now))
     }
 }
 
@@ -31,20 +31,28 @@ struct QuietHours: Codable, Equatable {
     var enabled = false
     var startMinutes = 22 * 60
     var endMinutes = 7 * 60
-    func contains(_ date: Date, calendar: Calendar = .current) -> Bool {
+    func contains(_ date: Date, calendar: Calendar = .autoupdatingCurrent) -> Bool {
         guard enabled else { return false }
         guard startMinutes != endMinutes else { return false }
         let value = calendar.component(.hour, from: date) * 60 + calendar.component(.minute, from: date)
         return startMinutes < endMinutes ? value >= startMinutes && value < endMinutes : value >= startMinutes || value < endMinutes
     }
-    func nextAllowedDate(_ date: Date, calendar: Calendar = .current) -> Date {
+    func nextAllowedDate(_ date: Date, stagger: TimeInterval = 0, calendar: Calendar = .autoupdatingCurrent) -> Date {
         guard contains(date, calendar: calendar) else { return date }
         let value = calendar.component(.hour, from: date) * 60 + calendar.component(.minute, from: date)
-        var day = calendar.startOfDay(for: date)
+        var endDay = date
         if startMinutes > endMinutes, value >= startMinutes {
-            day = calendar.date(byAdding: .day, value: 1, to: day) ?? day
+            endDay = calendar.date(byAdding: .day, value: 1, to: date) ?? date
         }
-        return calendar.date(byAdding: .minute, value: endMinutes, to: day) ?? date
+        guard let end = calendar.date(bySettingHour: endMinutes / 60, minute: endMinutes % 60, second: 0, of: endDay) else { return date }
+        guard let staggered = calendar.date(byAdding: .second, value: Int(stagger), to: end) else { return end }
+        return contains(staggered, calendar: calendar) ? end : staggered
+    }
+}
+
+extension ReminderKind {
+    var quietHoursStagger: TimeInterval {
+        TimeInterval((Self.allCases.firstIndex(of: self) ?? 0) * 3 * 60)
     }
 }
 
