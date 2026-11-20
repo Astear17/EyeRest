@@ -49,9 +49,12 @@ struct ReminderRow: View {
                 isOn: Binding(
                     get: { reminder.isEnabled },
                     set: { value in
-                        var changed = reminder
-                        changed.isEnabled = value
-                        model.update(changed)
+                        model.update(
+                            kind: reminder.kind,
+                            isEnabled: value,
+                            intervalMinutes: reminder.intervalMinutes,
+                            customMessage: reminder.customMessage
+                        )
                     }
                 )
             )

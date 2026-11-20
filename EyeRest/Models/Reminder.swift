@@ -33,14 +33,14 @@ struct ReminderConfiguration: Codable, Identifiable, Equatable {
     var id: String { kind.rawValue }
     var message: String {
         get { customMessage ?? kind.defaultMessage }
-        set { customMessage = Self.sanitize(newValue) }
+        set { customMessage = Self.normalizedCustomMessage(newValue) }
     }
 
     init(kind: ReminderKind, isEnabled: Bool, intervalMinutes: Int, customMessage: String?, nextFireDate: Date?) {
         self.kind = kind
         self.isEnabled = isEnabled
         self.intervalMinutes = intervalMinutes
-        self.customMessage = Self.sanitize(customMessage)
+        self.customMessage = Self.normalizedCustomMessage(customMessage)
         self.nextFireDate = nextFireDate
     }
 
@@ -60,7 +60,7 @@ struct ReminderConfiguration: Codable, Identifiable, Equatable {
         if let candidate, kind.knownDefaultMessages.contains(candidate.trimmingCharacters(in: .whitespacesAndNewlines)) {
             customMessage = nil
         } else {
-            customMessage = Self.sanitize(candidate)
+            customMessage = Self.normalizedCustomMessage(candidate)
         }
     }
 
@@ -69,11 +69,11 @@ struct ReminderConfiguration: Codable, Identifiable, Equatable {
         try container.encode(kind, forKey: .kind)
         try container.encode(isEnabled, forKey: .isEnabled)
         try container.encode(intervalMinutes, forKey: .intervalMinutes)
-        try container.encodeIfPresent(Self.sanitize(customMessage), forKey: .customMessage)
+        try container.encodeIfPresent(Self.normalizedCustomMessage(customMessage), forKey: .customMessage)
         try container.encodeIfPresent(nextFireDate, forKey: .nextFireDate)
     }
 
-    private static func sanitize(_ value: String?) -> String? {
+    static func normalizedCustomMessage(_ value: String?) -> String? {
         guard let value, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
         return String(value.prefix(200))
     }

@@ -16,6 +16,7 @@
   011 /* SettingsView.swift */ = {isa = PBXBuildFile; fileRef = 111; };
   012 /* DateFormatting.swift */ = {isa = PBXBuildFile; fileRef = 112; };
   013 /* NotificationPlanner.swift */ = {isa = PBXBuildFile; fileRef = 115; };
+  014 /* EyeRestSessionView.swift */ = {isa = PBXBuildFile; fileRef = 116; };
 /* End PBXBuildFile section */
 /* Begin PBXFileReference section */
   100 = {isa = PBXFileReference; lastKnownFileType = wrapper.application; path = EyeRest.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -34,6 +35,7 @@
   113 = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
   114 = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = EyeRest.entitlements; sourceTree = "<group>"; };
   115 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationPlanner.swift; sourceTree = "<group>"; };
+  116 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EyeRestSessionView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 /* Begin PBXGroup section */
   200 = {isa = PBXGroup; children = (201, 100); sourceTree = "<group>"; };
@@ -41,7 +43,7 @@
   202 = {isa = PBXGroup; path = Models; sourceTree = "<group>"; children = (102,103); };
   203 = {isa = PBXGroup; path = Services; sourceTree = "<group>"; children = (104,105,115); };
   204 = {isa = PBXGroup; path = ViewModels; sourceTree = "<group>"; children = (106); };
-  205 = {isa = PBXGroup; path = Views; sourceTree = "<group>"; children = (107,108,109,110,111); };
+  205 = {isa = PBXGroup; path = Views; sourceTree = "<group>"; children = (107,108,109,110,111,116); };
   206 = {isa = PBXGroup; path = Utilities; sourceTree = "<group>"; children = (112); };
 /* End PBXGroup section */
 /* Begin PBXNativeTarget section */
@@ -51,7 +53,7 @@
   400 = {isa = PBXProject; attributes = { LastUpgradeCheck = 1500; TargetAttributes = { 300 = { CreatedOnToolsVersion = 15.0; }; }; }; buildConfigurationList = 402; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base); mainGroup = 200; productRefGroup = 200; projectDirPath = ""; projectRoot = ""; targets = (300); };
 /* End PBXProject section */
 /* Begin PBXSourcesBuildPhase section */
-  301 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (001,002,003,004,005,006,007,008,009,010,011,012,013); runOnlyForDeploymentPostprocessing = 0; };
+  301 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (001,002,003,004,005,006,007,008,009,010,011,012,013,014); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 /* Begin XCBuildConfiguration section */
   500 = {isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; }; name = Debug; };

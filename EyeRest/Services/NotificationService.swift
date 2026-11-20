@@ -7,7 +7,7 @@ final class NotificationService: NSObject, ObservableObject {
     static let shared = NotificationService()
     static let categoryID = "EYEREST_REMINDER", snoozeAction = "SNOOZE_10", doneAction = "MARK_DONE"
     @Published private(set) var authorizationStatus: UNAuthorizationStatus = .notDetermined
-    private var timeSensitiveSetting: UNNotificationSetting = .notSupported
+    @Published private(set) var timeSensitiveSetting: UNNotificationSetting = .notSupported
     private let center = UNUserNotificationCenter.current()
     private var bufferedActions: [(ReminderKind, String)] = []
     var actionHandler: ((ReminderKind, String) -> Void)? {
