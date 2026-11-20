@@ -6,7 +6,8 @@ EyeRest is an offline-first iOS wellness reminder designed to help you take regu
 
 Built with SwiftUI, EyeRest prioritizes simplicity, privacy, and a distraction-free experience. No accounts, advertising, tracking, or cloud dependency.
 
-> **Status:** In development. The iOS application has not yet been validated on a physical device.
+> [!IMPORTANT]
+> I am a meat proxy, so expect bugs when using. This project is built on GPT 5.6 Sol.
 
 ## Features
 
