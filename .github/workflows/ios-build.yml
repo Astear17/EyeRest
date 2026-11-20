@@ -94,6 +94,29 @@ jobs:
           fi
           app_name="$(basename "$app_path")"
           product_name="${app_name%.app}"
+          executable="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app_path/Info.plist")"
+          package_type="$(/usr/libexec/PlistBuddy -c 'Print :CFBundlePackageType' "$app_path/Info.plist")"
+          version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_path/Info.plist")"
+          build_number="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Info.plist")"
+          bundle_identifier="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app_path/Info.plist")"
+          if [[ "$executable" != "$product_name" ]]; then
+            echo "Expected CFBundleExecutable '$product_name', found '$executable'." >&2
+            exit 1
+          fi
+          if [[ "$package_type" != "APPL" ]]; then
+            echo "Expected CFBundlePackageType 'APPL', found '$package_type'." >&2
+            exit 1
+          fi
+          if [[ "$bundle_identifier" != "com.astear17.eyerest" || "$version" != "1.0" || "$build_number" != "1" ]]; then
+            echo "Unexpected bundle metadata: identifier=$bundle_identifier version=$version build=$build_number" >&2
+            exit 1
+          fi
+          if [[ ! -x "$app_path/$executable" ]]; then
+            echo "Missing or non-executable app binary: $app_path/$executable" >&2
+            exit 1
+          fi
+          printf 'Validated bundle metadata: identifier=%s version=%s build=%s executable=%s packageType=%s\n' "$bundle_identifier" "$version" "$build_number" "$executable" "$package_type"
+          /usr/bin/plutil -convert xml1 -o "$ARTIFACT_DIR/${product_name}-Info.plist" "$app_path/Info.plist"
           (
             cd "$(dirname "$app_path")"
             /usr/bin/zip -qry "$ARTIFACT_DIR/${product_name}-unsigned.app.zip" "$app_name"
@@ -107,10 +130,7 @@ jobs:
             /usr/bin/zip -qry "$ARTIFACT_DIR/${product_name}-unsigned.ipa" Payload
           )
           unzip -t "$ARTIFACT_DIR/${product_name}-unsigned.ipa"
-          version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_path/Info.plist")"
-          build_number="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Info.plist")"
-          bundle_identifier="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app_path/Info.plist")"
-          python3 -c 'import json, sys; path, product, version, build, bundle_id, sha = sys.argv[1:]; open(path, "w", encoding="utf-8").write(json.dumps({"product": product, "bundleIdentifier": bundle_id, "version": version, "buildNumber": build, "commit": sha, "configuration": "Release", "sdk": "iphoneos", "signing": "disabled", "ipa": "unsigned; inspection-only and not installable on a normal iPhone"}, indent=2) + "\n")' "$ARTIFACT_DIR/build-metadata.json" "$product_name" "$version" "$build_number" "$bundle_identifier" "$GITHUB_SHA"
+          python3 -c 'import json, sys; path, product, executable, package_type, version, build, bundle_id, sha = sys.argv[1:]; open(path, "w", encoding="utf-8").write(json.dumps({"product": product, "executable": executable, "packageType": package_type, "bundleIdentifier": bundle_id, "version": version, "buildNumber": build, "commit": sha, "configuration": "Release", "sdk": "iphoneos", "signing": "disabled", "infoPlist": f"{product}-Info.plist", "ipa": "unsigned; inspection-only and not installable on a normal iPhone"}, indent=2) + "\n")' "$ARTIFACT_DIR/build-metadata.json" "$product_name" "$executable" "$package_type" "$version" "$build_number" "$bundle_identifier" "$GITHUB_SHA"
 
       - name: Upload build artifacts
         if: always()

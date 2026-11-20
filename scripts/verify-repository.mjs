@@ -17,6 +17,7 @@ const workflow = readFileSync('.github/workflows/pages.yml', 'utf8');
 const iosBuildWorkflow = readFileSync('.github/workflows/ios-build.yml', 'utf8');
 const pbxproj = readFileSync('EyeRest.xcodeproj/project.pbxproj', 'utf8');
 const scheme = readFileSync('EyeRest.xcodeproj/xcshareddata/xcschemes/EyeRest.xcscheme', 'utf8');
+const infoPlist = readFileSync('EyeRest/Info.plist', 'utf8');
 const notificationService = readFileSync('EyeRest/Services/NotificationService.swift', 'utf8');
 const persistenceService = readFileSync('EyeRest/Services/PersistenceService.swift', 'utf8');
 const appViewModel = readFileSync('EyeRest/ViewModels/AppViewModel.swift', 'utf8');
@@ -74,7 +75,8 @@ if ((css.match(/{/g) ?? []).length !== (css.match(/}/g) ?? []).length) throw new
 if (!workflow.includes('path: website') || !workflow.includes("'website/**'")) throw new Error('Pages workflow paths are incorrect.');
 if (!pbxproj.includes('PRODUCT_BUNDLE_IDENTIFIER = com.astear17.eyerest') || !pbxproj.includes('IPHONEOS_DEPLOYMENT_TARGET = 17.0') || !pbxproj.includes('SWIFT_VERSION = 5.9')) throw new Error('iOS project settings are incorrect.');
 if (!scheme.includes('BlueprintIdentifier="300"') || !scheme.includes('BlueprintName="EyeRest"')) throw new Error('Shared EyeRest scheme does not reference the app target.');
-for (const expected of ['name: EyeRest iOS Build', "'EyeRest/**'", 'runs-on: macos-15', 'Xcode_16.4.app', 'generic/platform=iOS', '-configuration Release', 'CODE_SIGNING_ALLOWED=NO', 'actions/upload-artifact@v4', 'retention-days: 14', 'pull_request:']) {
+if (!infoPlist.includes('<key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>') || !infoPlist.includes('<key>CFBundlePackageType</key><string>APPL</string>')) throw new Error('Required application bundle metadata is missing.');
+for (const expected of ['name: EyeRest iOS Build', "'EyeRest/**'", 'runs-on: macos-15', 'Xcode_16.4.app', 'generic/platform=iOS', '-configuration Release', 'CODE_SIGNING_ALLOWED=NO', 'CFBundleExecutable', 'CFBundlePackageType', 'actions/upload-artifact@v4', 'retention-days: 14', 'pull_request:']) {
   if (!iosBuildWorkflow.includes(expected)) throw new Error(`iOS build workflow is missing: ${expected}`);
 }
 if (!notificationService.includes('timeSensitiveSetting') || !notificationService.includes('pendingNotificationRequests')) throw new Error('Expected local-notification scheduling safeguards are missing.');
