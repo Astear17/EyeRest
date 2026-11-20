@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">EyeRest app icon</title>
+  <desc id="desc">The lime dotted-circle mark used by the original EyeRest website.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#17211D"/>
+      <stop offset="1" stop-color="#101719"/>
+    </linearGradient>
+    <radialGradient id="glow">
+      <stop offset="0" stop-color="#C9FF70" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#C9FF70" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#background)"/>
+  <circle cx="512" cy="512" r="390" fill="url(#glow)"/>
+  <g fill="#C9FF70">
+    <circle cx="512" cy="277" r="48"/>
+    <circle cx="678.17" cy="345.83" r="48"/>
+    <circle cx="747" cy="512" r="48"/>
+    <circle cx="678.17" cy="678.17" r="48"/>
+    <circle cx="512" cy="747" r="48"/>
+    <circle cx="345.83" cy="678.17" r="48"/>
+    <circle cx="277" cy="512" r="48"/>
+    <circle cx="345.83" cy="345.83" r="48"/>
+  </g>
+</svg>

@@ -1,0 +1,22 @@
+/* The original EyeRest mark from commits 5a6b161 and e2cf42d was the dotted-circle glyph, ◌. */
+.brand-orbit {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 0;
+  background:
+    radial-gradient(circle at 50% 6%, var(--lime) 0 8%, transparent 10%),
+    radial-gradient(circle at 81% 19%, var(--lime) 0 8%, transparent 10%),
+    radial-gradient(circle at 94% 50%, var(--lime) 0 8%, transparent 10%),
+    radial-gradient(circle at 81% 81%, var(--lime) 0 8%, transparent 10%),
+    radial-gradient(circle at 50% 94%, var(--lime) 0 8%, transparent 10%),
+    radial-gradient(circle at 19% 81%, var(--lime) 0 8%, transparent 10%),
+    radial-gradient(circle at 6% 50%, var(--lime) 0 8%, transparent 10%),
+    radial-gradient(circle at 19% 19%, var(--lime) 0 8%, transparent 10%);
+  position: relative;
+}
+
+.brand-orbit::after {
+  content: none;
+}

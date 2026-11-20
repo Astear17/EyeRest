@@ -2,7 +2,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const required = [
-  'website/index.html', 'website/assets/styles.css', 'website/assets/main.js',
+  'website/index.html', 'website/assets/styles.css', 'website/assets/brand.css', 'website/assets/main.js',
   '.github/workflows/pages.yml', 'EyeRest.xcodeproj/project.pbxproj',
   'EyeRest.xcodeproj/xcshareddata/xcschemes/EyeRest.xcscheme',
   '.github/workflows/ios-build.yml',
@@ -12,12 +12,18 @@ const required = [
   'Tests/EyeRestLogicTests/QuietHoursTests.swift',
   'EyeRest/Resources/Localizable.xcstrings',
   'EyeRest/EyeRestApp.swift', 'EyeRest/Services/NotificationService.swift', 'EyeRest/Services/PersistenceService.swift',
-  'EyeRest/ViewModels/AppViewModel.swift', 'docs/IOS_DEVELOPMENT.md', 'docs/IOS_BUILD.md'
+  'EyeRest/ViewModels/AppViewModel.swift', 'docs/IOS_DEVELOPMENT.md', 'docs/IOS_BUILD.md',
+  'design/app-icon.svg', 'scripts/generate-app-icon.mjs', 'EyeRest/Assets.xcassets/Contents.json',
+  'EyeRest/Assets.xcassets/AccentColor.colorset/Contents.json', 'EyeRest/Assets.xcassets/AppIcon.appiconset/Contents.json',
+  'EyeRest/Assets.xcassets/AppIcon.appiconset/AppIcon.png',
+  'EyeRest/Assets.xcassets/AppIcon.appiconset/AppIcon-Dark.png',
+  'EyeRest/Assets.xcassets/AppIcon.appiconset/AppIcon-Tinted.png'
 ];
 for (const path of required) if (!existsSync(path)) throw new Error(`Missing required file: ${path}`);
 
 const website = readFileSync('website/index.html', 'utf8');
 const css = readFileSync('website/assets/styles.css', 'utf8');
+const brandCSS = readFileSync('website/assets/brand.css', 'utf8');
 const workflow = readFileSync('.github/workflows/pages.yml', 'utf8');
 const iosBuildWorkflow = readFileSync('.github/workflows/ios-build.yml', 'utf8');
 const pbxproj = readFileSync('EyeRest.xcodeproj/project.pbxproj', 'utf8');
@@ -75,11 +81,14 @@ function assertBalancedSwiftDelimiters(path) {
   if (stack.length) throw new Error(`Unclosed Swift delimiter in ${path} at character ${stack.at(-1).index}.`);
 }
 
-if (!website.includes('assets/styles.css') || !website.includes('assets/main.js')) throw new Error('Website asset paths are incomplete.');
+if (!website.includes('assets/styles.css') || !website.includes('assets/brand.css') || !website.includes('assets/main.js')) throw new Error('Website asset paths are incomplete.');
+if ((brandCSS.match(/radial-gradient\(circle at/g) ?? []).length !== 8 || !brandCSS.includes('.brand-orbit::after')) throw new Error('Website dotted-circle brand mark is incomplete.');
 if (!website.includes('fonts.googleapis.com') || !website.includes('fonts.gstatic.com')) throw new Error('Website typography resources are missing.');
 if ((css.match(/{/g) ?? []).length !== (css.match(/}/g) ?? []).length) throw new Error('CSS braces are unbalanced.');
 if (!workflow.includes('path: website') || !workflow.includes("'website/**'")) throw new Error('Pages workflow paths are incorrect.');
 if (!pbxproj.includes('PRODUCT_BUNDLE_IDENTIFIER = com.astear17.eyerest') || !pbxproj.includes('IPHONEOS_DEPLOYMENT_TARGET = 17.0') || !pbxproj.includes('SWIFT_VERSION = 5.9')) throw new Error('iOS project settings are incorrect.');
+if ((pbxproj.match(/ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon/g) ?? []).length !== 2 || (pbxproj.match(/ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor/g) ?? []).length !== 2) throw new Error('Asset catalog build settings are incomplete.');
+if (!pbxproj.includes('folder.assetcatalog; path = Assets.xcassets') || !pbxproj.includes('files = (015,016)')) throw new Error('Assets.xcassets is not in the app resources phase.');
 if (!scheme.includes('BlueprintIdentifier="300"') || !scheme.includes('BlueprintName="EyeRest"')) throw new Error('Shared EyeRest scheme does not reference the app target.');
 if (!infoPlist.includes('<key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>') || !infoPlist.includes('<key>CFBundlePackageType</key><string>APPL</string>')) throw new Error('Required application bundle metadata is missing.');
 for (const expected of ['<key>CFBundleName</key><string>$(PRODUCT_NAME)</string>', '<key>CFBundleInfoDictionaryVersion</key><string>6.0</string>', '<key>CFBundleDevelopmentRegion</key><string>$(DEVELOPMENT_LANGUAGE)</string>', '<key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>', '<key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>']) {
@@ -99,6 +108,15 @@ for (const key of ['Every %lld min · %@', 'Interval: %lld minutes', '%lld compl
 if (!notificationService.includes('timeSensitiveSetting') || !notificationService.includes('pendingNotificationRequests')) throw new Error('Expected local-notification scheduling safeguards are missing.');
 if (!persistenceService.includes('Array(completions.suffix(500))')) throw new Error('Completion-history persistence limit is missing.');
 if (!appViewModel.includes('guard !preferences.isPaused')) throw new Error('Paused-state presentation guard is missing.');
+
+for (const filename of ['AppIcon.png', 'AppIcon-Dark.png', 'AppIcon-Tinted.png']) {
+  const path = join('EyeRest', 'Assets.xcassets', 'AppIcon.appiconset', filename);
+  const png = readFileSync(path);
+  const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  if (!png.subarray(0, 8).equals(signature)) throw new Error(`${filename} is not a PNG.`);
+  if (png.readUInt32BE(16) !== 1024 || png.readUInt32BE(20) !== 1024) throw new Error(`${filename} must be 1024x1024.`);
+  if (png[24] !== 8 || png[25] !== 2) throw new Error(`${filename} must be 8-bit opaque RGB without alpha.`);
+}
 
 function walk(directory) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
