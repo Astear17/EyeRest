@@ -1,27 +1,15 @@
-# EyeRest
+# EyeRest website
 
-The public landing site for EyeRest, an in-development offline wellness reminder app for iOS.
+This directory is the static GitHub Pages site for EyeRest. It has no build step and makes no runtime requests for fonts, analytics, or application data.
 
-## Run locally
+The configured Pages URL is `http://astear17.sino.tw/EyeRest/`; the project base path is `/EyeRest/`. All in-site links are relative so the same files work on the custom Pages path and in a local static server.
 
-This is a dependency-free static site. From this directory, serve it with any static server, for example:
+Run the dependency-free checks from the repository root:
 
-```powershell
-npx serve .
+```bash
+node scripts/verify-website.mjs
 ```
 
-Then open the displayed local URL. No build step is required.
+Serve `website/` as the document root for browser review. Do not publish from a local machine; `.github/workflows/pages.yml` deploys the directory after verification when changes reach `main`.
 
-## Deploy to GitHub Pages
-
-The included workflow publishes the root of `main` to GitHub Pages. In the repository Settings, choose **Pages → Build and deployment → Source: GitHub Actions** once. Pushes to `main` will then redeploy automatically.
-
-All internal assets use relative paths, so the site works at the repository Pages base path (`/eyerest/`) without a framework-specific setting. Typography uses Google Fonts with system-font fallbacks.
-
-## Planned iOS app
-
-See the repository [iOS development notes](../docs/IOS_DEVELOPMENT.md) for the future macOS/Xcode development plan, app architecture, local notification scheduling, offline model, build requirements, and unsigned IPA caveats.
-
-## Project status
-
-The landing page is complete. The native iOS app has not yet been built or validated on macOS; its planned capabilities are deliberately labeled as planned.
+The bundled DM Sans and Instrument Serif files come from Google Fonts under the SIL Open Font License. Copies are in `assets/licenses/`.

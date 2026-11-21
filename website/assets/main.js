@@ -1,9 +1,7 @@
-document.documentElement.classList.add('js');
-const body = document.body;
-const themeButton = document.querySelector('[data-theme-toggle]');
-if (localStorage.getItem('eyerest-theme') === 'light') body.classList.add('light');
-themeButton?.addEventListener('click', () => { const isLight = body.classList.toggle('light'); themeButton.setAttribute('aria-pressed', String(isLight)); localStorage.setItem('eyerest-theme', isLight ? 'light' : 'dark'); });
-const header = document.querySelector('[data-header]');
-const updateHeader = () => header?.classList.toggle('is-scrolled', window.scrollY > 20);
-updateHeader(); window.addEventListener('scroll', updateHeader, { passive: true });
-if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) { const observer = new IntersectionObserver((entries) => entries.forEach((entry) => { if (entry.isIntersecting) { entry.target.classList.add('is-visible'); observer.unobserve(entry.target); } }), { threshold: 0.12 }); document.querySelectorAll('.reveal').forEach((element) => observer.observe(element)); } else { document.querySelectorAll('.reveal').forEach((element) => element.classList.add('is-visible')); }
+document.documentElement.classList.add("js");
+const root=document.documentElement;const themeButton=document.querySelector("[data-theme-toggle]");
+const setThemeButtonState=()=>{const light=root.dataset.theme==="light";themeButton?.setAttribute("aria-pressed",String(light));themeButton?.setAttribute("aria-label",light?"Use dark theme":"Use light theme")};
+setThemeButtonState();themeButton?.addEventListener("click",()=>{root.dataset.theme=root.dataset.theme==="light"?"dark":"light";localStorage.setItem("eyerest-theme",root.dataset.theme);setThemeButtonState()});
+const menuButton=document.querySelector("[data-menu-toggle]");const navigation=document.querySelector("[data-navigation]");const closeMenu=()=>{navigation?.setAttribute("data-open","false");menuButton?.setAttribute("aria-expanded","false")};
+menuButton?.addEventListener("click",()=>{const open=navigation?.getAttribute("data-open")!=="true";navigation?.setAttribute("data-open",String(open));menuButton.setAttribute("aria-expanded",String(open))});navigation?.querySelectorAll("a").forEach(link=>link.addEventListener("click",closeMenu));document.addEventListener("keydown",event=>{if(event.key==="Escape")closeMenu()});
+if(!window.matchMedia("(prefers-reduced-motion: reduce)").matches){const observer=new IntersectionObserver(entries=>{entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add("is-visible");observer.unobserve(entry.target)}})},{threshold:.1});document.querySelectorAll(".reveal").forEach(element=>observer.observe(element))}else{document.querySelectorAll(".reveal").forEach(element=>element.classList.add("is-visible"))}

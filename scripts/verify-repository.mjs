@@ -2,7 +2,9 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const required = [
-  'website/index.html', 'website/assets/styles.css', 'website/assets/brand.css', 'website/assets/main.js',
+  'website/index.html', 'website/assets/styles.css', 'website/assets/main.js',
+  'website/assets/fonts/dm-sans-latin.woff2', 'website/assets/fonts/dm-sans-latin-ext.woff2',
+  'website/assets/fonts/instrument-serif-latin.woff2', 'website/assets/fonts/instrument-serif-italic-latin.woff2',
   '.github/workflows/pages.yml', 'EyeRest.xcodeproj/project.pbxproj',
   'EyeRest.xcodeproj/xcshareddata/xcschemes/EyeRest.xcscheme',
   '.github/workflows/ios-build.yml',
@@ -36,7 +38,6 @@ for (const path of required) if (!existsSync(path)) throw new Error(`Missing req
 
 const website = readFileSync('website/index.html', 'utf8');
 const css = readFileSync('website/assets/styles.css', 'utf8');
-const brandCSS = readFileSync('website/assets/brand.css', 'utf8');
 const workflow = readFileSync('.github/workflows/pages.yml', 'utf8');
 const iosBuildWorkflow = readFileSync('.github/workflows/ios-build.yml', 'utf8');
 const pbxproj = readFileSync('EyeRest.xcodeproj/project.pbxproj', 'utf8');
@@ -94,11 +95,11 @@ function assertBalancedSwiftDelimiters(path) {
   if (stack.length) throw new Error(`Unclosed Swift delimiter in ${path} at character ${stack.at(-1).index}.`);
 }
 
-if (!website.includes('assets/styles.css') || !website.includes('assets/brand.css') || !website.includes('assets/main.js')) throw new Error('Website asset paths are incomplete.');
-if ((brandCSS.match(/radial-gradient\(circle at/g) ?? []).length !== 8 || !brandCSS.includes('.brand-orbit::after')) throw new Error('Website dotted-circle brand mark is incomplete.');
-if (!website.includes('fonts.googleapis.com') || !website.includes('fonts.gstatic.com')) throw new Error('Website typography resources are missing.');
+if (!website.includes('assets/styles.css') || !website.includes('assets/main.js')) throw new Error('Website asset paths are incomplete.');
+if (!css.includes('fonts/dm-sans-latin.woff2') || !css.includes('fonts/dm-sans-latin-ext.woff2') || !css.includes('fonts/instrument-serif-latin.woff2')) throw new Error('Self-hosted website typography resources are missing.');
 if ((css.match(/{/g) ?? []).length !== (css.match(/}/g) ?? []).length) throw new Error('CSS braces are unbalanced.');
 if (!workflow.includes('path: website') || !workflow.includes("'website/**'")) throw new Error('Pages workflow paths are incorrect.');
+if (!workflow.includes('node scripts/verify-website.mjs')) throw new Error('Pages workflow does not verify the static website.');
 if (!pbxproj.includes('PRODUCT_BUNDLE_IDENTIFIER = com.astear17.eyerest') || !pbxproj.includes('IPHONEOS_DEPLOYMENT_TARGET = 17.0') || !pbxproj.includes('SWIFT_VERSION = 5.9')) throw new Error('iOS project settings are incorrect.');
 if ((pbxproj.match(/ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon/g) ?? []).length !== 2 || (pbxproj.match(/ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor/g) ?? []).length !== 2) throw new Error('Asset catalog build settings are incomplete.');
 if (!pbxproj.includes('folder.assetcatalog; path = Assets.xcassets') || !pbxproj.includes('files = (015,016)')) throw new Error('Assets.xcassets is not in the app resources phase.');
