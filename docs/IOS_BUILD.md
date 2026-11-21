@@ -20,11 +20,12 @@ For normal device development, select a valid Apple development team and build t
 
 ## GitHub Actions
 
-The **EyeRest iOS Build** workflow runs for relevant pushes, pull requests targeting `main`, and manual dispatch. It pins GitHub `macos-15` to `/Applications/Xcode_16.4.app`, runs the repository verifier, builds Release for generic iOS with code signing disabled, validates the processed app metadata, localization resources, compiled `Assets.car`, and processed AppIcon metadata, packages the unsigned app and IPA, and integrity-checks the IPA. The workflow log also reports whether Xcode emitted a standalone `AppIcon60x60@2x.png`; the asset catalog remains authoritative either way. A separate job runs the Foundation-only Swift package tests.
+The **EyeRest iOS Build** workflow runs for relevant pushes to `main`, pull requests targeting `main`, manual dispatch, and tags matching `v*`. It pins GitHub `macos-15` to `/Applications/Xcode_16.4.app`, runs the repository verifier, builds Release for generic iOS with code signing disabled, validates the processed app metadata, localization resources, compiled `Assets.car`, and processed AppIcon metadata, packages the unsigned app and IPA, and integrity-checks the IPA. The workflow log also reports whether Xcode emitted a standalone `AppIcon60x60@2x.png`; the asset catalog remains authoritative either way. A separate job runs the Foundation-only Swift package tests.
 
 The 14-day artifact remains named `eyerest-ios-unsigned-<sha>` and contains:
 
 - `EyeRest-unsigned.ipa`
+- `EyeRest-unsigned.ipa.sha256`
 - `EyeRest-unsigned.app.zip`
 - `EyeRest-Info.plist`
 - `build-metadata.json`
@@ -32,9 +33,11 @@ The 14-day artifact remains named `eyerest-ios-unsigned-<sha>` and contains:
 
 The IPA must contain `Payload/EyeRest.app/EyeRest`, the processed Info.plist, and compiled `en.lproj` and `vi.lproj` localization resources.
 
+Manual dispatch is a dry run: it uploads the same 14-day artifact but never publishes a release. After the repository owner completes physical-device testing and pushes a `v*` tag, the tag run waits for both the logic-tests and build jobs, verifies the checksum, then publishes a GitHub Release containing only `EyeRest-unsigned.ipa`, `EyeRest-unsigned.ipa.sha256`, and `build-metadata.json`. Write permission is scoped to that tag-only release job. The workflow never signs the app and contains no signing secret.
+
 ## Time Sensitive and sideloading
 
-The unsigned CI artifact embeds no usable device signature or provisioning profile. Feather/KSign must re-sign it with valid credentials before installation. Time Sensitive delivery works only when the re-signing certificate and provisioning profile carry the capability and the user enables it in iPhone notification settings. Otherwise EyeRest deliberately schedules normal `.active` notifications. Never add a certificate, P12 password, provisioning profile, or signing secret to this workflow.
+The unsigned CI artifact embeds no usable device signature or provisioning profile. A compatible signing tool must re-sign it with valid credentials before installation. Time Sensitive delivery works only when the re-signing certificate and provisioning profile carry the capability and the user enables it in iPhone notification settings. Otherwise EyeRest deliberately schedules normal `.active` notifications. Never add a certificate, P12 password, provisioning profile, or signing secret to this workflow. See [SIDELOADING.md](SIDELOADING.md) for the owner-maintained compatibility record.
 
 A P12 MAC verification failure is a credential or password problem, not an IPA source-code problem. The app cannot work around an invalid P12.
 

@@ -1,127 +1,75 @@
 # EyeRest
 
-**A calmer way to build healthier screen habits.**
+**Give your eyes a moment.**
 
-EyeRest is an offline-first iOS wellness reminder designed to help you take regular breaks, rest your eyes, stay hydrated, and maintain healthier daily habits.
+EyeRest is a native, offline-first iOS 17+ app for gentle wellness reminders and guided breaks. It stores preferences and activity history on the iPhone, has no account, ads, analytics, or app network requests, and uses no third-party runtime dependencies.
 
-Built with SwiftUI, EyeRest prioritizes simplicity, privacy, and a distraction-free experience. No accounts, advertising, tracking, or cloud dependency.
+## What it does
 
-> [!IMPORTANT]
-> I am a meat proxy, so expect bugs when using. This project is built on GPT 5.6 Sol.
+- Five configurable reminders: eye rest, hydration, blinking, posture, and movement.
+- Active days, quiet hours, pause controls, and optional notification snooze.
+- Four guided breaks with pause and resume, haptics, Reduce Motion support, and completed-session history.
+- Activity streaks, weekly break time, a seven-day chart, and 30-day history.
+- Local JSON backup export and validated import with one-use undo.
+- English and Vietnamese localization.
 
-## Features
+EyeRest provides general wellness prompts, not medical advice. iOS may delay or suppress notifications because of Focus, notification settings, system policy, or an expired app signature.
 
-- **Eye relaxation** — Gentle reminders to look into the distance.
-- **Hydration** — Reminders to stay hydrated throughout the day.
-- **Natural blinking** — Encouragement to blink and relax your eyes.
-- **Posture** — Occasional reminders to check your sitting position.
-- **Movement** — Encouragement to take regular movement breaks.
-- **Offline-first** — Designed to operate without an internet connection.
+## Install on an iPhone
 
-Feature availability depends on implementation and testing progress.
+EyeRest is distributed outside the App Store as an **unsigned IPA**. Download `EyeRest-unsigned.ipa` and its `.sha256` file from [GitHub Releases](https://github.com/Astear17/EyeRest/releases/latest), verify the checksum, then sign and install the IPA with a tool and signing profile you trust. You do not need Xcode merely to use an already-built IPA, but the IPA will not run until it is signed.
 
-## Technology
+Free Apple ID signing commonly expires after about seven days and then needs re-signing. A signing tool can change the bundle identifier, which makes iOS treat the result as a separate app; export a backup before changing tools or identifiers.
 
-- Swift and SwiftUI
-- iOS 17.0+
-- UserNotifications for local notifications
-- Local persistence
-- No third-party runtime dependencies
+See [Sideloading EyeRest](docs/SIDELOADING.md) for exact Windows and macOS checksum commands, compatibility limits, and troubleshooting. Signing-tool compatibility has not yet been validated on a physical device.
 
-## Getting started
+## Build and validate
 
-### Requirements
+The project is SwiftUI with one shared `EyeRest` scheme. No signing material belongs in this repository.
 
-- macOS with a compatible version of Xcode (15 or newer).
-- iOS 17.0+ deployment target.
-- An Apple development account for installing signed builds on physical devices.
-
-### Open the project
-
-Clone the repository:
-
-```bash
-git clone https://github.com/Astear17/EyeRest.git
-cd EyeRest
-```
-
-Open the Xcode project:
-
-```bash
-open EyeRest.xcodeproj
-```
-
-Select your development team and configure signing before installing the application on a physical iPhone.
-
-See [iOS Build Guide](docs/IOS_BUILD.md) and [iOS Validation Guide](docs/IOS_VALIDATION.md) for additional instructions.
-
-## Website
-
-The EyeRest product website is maintained separately in `website/` and deployed through GitHub Pages.
-
-Preview it locally:
-
-```bash
-python -m http.server 4173 --directory website
-```
-
-Then open:
-
-http://127.0.0.1:4173
-
-## Repository structure
-
-```text
-EyeRest/
-├── .github/
-│   └── workflows/       # GitHub Actions
-├── EyeRest/
-│   └──                 # SwiftUI application source
-├── EyeRest.xcodeproj/   # Xcode project
-├── website/             # Product website
-├── docs/                # Technical documentation
-├── scripts/             # Development and validation scripts
-└── README.md
-```
-
-## Validation
-
-Run the repository verification script:
+On any machine with Node.js:
 
 ```bash
 node scripts/verify-repository.mjs
 ```
 
-This checks repository structure, website assets, GitHub Pages configuration, selected iOS project settings, the iOS build workflow, and potentially sensitive committed files. It does not replace `xcodebuild` or physical-device testing.
+On macOS with Xcode 16.4 and Swift 5.9 or newer:
 
-## GitHub-hosted iOS builds
+```bash
+swift test
+xcodebuild -project EyeRest.xcodeproj -scheme EyeRest -configuration Release \
+  -sdk iphoneos -destination 'generic/platform=iOS' \
+  CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' \
+  clean build
+```
 
-Xcode is not required on a local Windows machine to compile EyeRest. The **EyeRest iOS Build** GitHub Actions workflow runs on every push to `main`, every pull request targeting `main`, and when started manually from **Actions → EyeRest iOS Build → Run workflow**. It uses the GitHub-hosted `macos-15` runner and explicitly selects Xcode 16.4.
+GitHub Actions runs the repository verifier, Foundation-only tests, unsigned Release build, localization checks, and app-icon checks. Manual workflow runs are dry runs that upload artifacts only. A tag matching `v*` will publish a GitHub Release only after both test and build jobs pass; the repository owner creates tags after physical-device testing.
 
-Each successful run builds the sole shared `EyeRest` scheme in the Release configuration for a generic iOS device with code signing disabled. Open that run’s **Artifacts** section to download `eyerest-ios-unsigned-<commit>` for 14 days. It includes:
+## Documentation
 
-- `EyeRest-unsigned.app.zip` — the compiled app bundle for inspection.
-- `EyeRest-unsigned.ipa` — an **unsigned**, inspection-only IPA.
-- `xcodebuild.log` and `build-metadata.json` — diagnostics plus the commit, version, build number, configuration, SDK, and signing state.
+- [Sideloading and signing](docs/SIDELOADING.md)
+- [Architecture and scheduling](docs/ARCHITECTURE.md)
+- [Build and distribution](docs/IOS_BUILD.md)
+- [Validation status](docs/IOS_VALIDATION.md)
+- [Backup data format](docs/DATA_FORMAT.md)
+- [Physical-device release checklist](docs/RELEASE_CHECKLIST.md)
+- [Changelog](CHANGELOG.md)
 
-An unsigned IPA cannot be installed on a normal iPhone. Device installation still requires valid Apple signing (for example, a development-signed build exported on macOS or re-signed through an authorized workflow). See [docs/IOS_BUILD.md](docs/IOS_BUILD.md#github-actions-builds) for troubleshooting and the exact CI behavior.
+The static website lives in `website/` and is deployed through GitHub Pages. Preview it with `python -m http.server 4173 --directory website`.
+
+## Repository layout
+
+```text
+EyeRest.xcodeproj/    Xcode project
+EyeRest/              App source plus Foundation-only package sources
+Tests/                Swift package tests
+website/              Static product website
+docs/                 Technical and owner documentation
+scripts/              Dependency-free verification tools
+```
 
 ## Privacy
 
-EyeRest is designed around a privacy-first approach:
+EyeRest makes no app network requests. Reminder settings, preferences, and activity records remain local unless the user explicitly exports a backup. The website has separate privacy information.
 
-- No user accounts.
-- No advertising.
-- No tracking or analytics.
-- No cloud dependency.
-- Local reminder scheduling and preferences.
-
-## Project
-
-- **Developer:** [@Astear17](https://github.com/Astear17)
-- **Repository:** [Astear17/EyeRest](https://github.com/Astear17/EyeRest)
-- **Website:** [EyeRest on GitHub Pages](https://astear17.github.io/EyeRest/)
-
----
-
-*EyeRest — Give your eyes a moment.*
+Developer: [@Astear17](https://github.com/Astear17) · [Repository](https://github.com/Astear17/EyeRest)
