@@ -23,7 +23,7 @@ enum ScheduleRules {
     }
 
     private static func nextActiveDay(after date: Date, activeDays: Set<Int>, calendar: Calendar) -> Date {
-        var cursor = calendar.startOfDay(for: date)
+        var cursor = date
         for _ in 0..<7 {
             cursor = calendar.date(byAdding: .day, value: 1, to: cursor) ?? cursor.addingTimeInterval(86_400)
             if activeDays.contains(calendar.component(.weekday, from: cursor)) { return cursor }

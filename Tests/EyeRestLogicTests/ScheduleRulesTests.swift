@@ -24,6 +24,19 @@ final class ScheduleRulesTests: XCTestCase {
         XCTAssertEqual(ScheduleRules.adjustedDate(beforeDST, kind: .posture, preferences: preferences, calendar: calendar), preferences.pausedUntil)
     }
 
+    func testNextActiveDayPreservesWallClockTimeWithoutQuietHours() {
+        let calendar = testCalendar()
+        let saturday = testDate(2026, 11, 21, 14, 35, calendar: calendar)
+        var preferences = AppPreferences.makeDefault(now: saturday)
+        preferences.activeDays = [2, 3, 4, 5, 6]
+
+        let result = ScheduleRules.adjustedDate(saturday, kind: .hydration, preferences: preferences, calendar: calendar)
+
+        XCTAssertEqual(calendar.component(.weekday, from: result!), 2)
+        XCTAssertEqual(calendar.component(.hour, from: result!), 14)
+        XCTAssertEqual(calendar.component(.minute, from: result!), 35)
+    }
+
     func testIndefinitePauseAndDisabledKindReturnNil() {
         var preferences = AppPreferences.makeDefault()
         preferences.pausedUntil = .distantFuture
