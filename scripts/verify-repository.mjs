@@ -3,6 +3,8 @@ import { join } from 'node:path';
 
 const required = [
   'website/index.html', 'website/assets/styles.css', 'website/assets/main.js',
+  'website/assets/favicon.svg', 'website/assets/apple-touch-icon.png', 'website/assets/og-image.png',
+  'design/source/eye-clock.png', 'design/app-icon.svg', 'scripts/generate-website-assets.mjs',
   'website/assets/fonts/dm-sans-latin.woff2', 'website/assets/fonts/dm-sans-latin-ext.woff2',
   'website/assets/fonts/instrument-serif-latin.woff2', 'website/assets/fonts/instrument-serif-italic-latin.woff2',
   '.github/workflows/pages.yml', 'EyeRest.xcodeproj/project.pbxproj',
