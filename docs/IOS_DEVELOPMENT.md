@@ -2,31 +2,33 @@
 
 ## Target and architecture
 
-- **Platform:** iPhone XS and newer, iOS 17+
-- **UI:** SwiftUI, native SF Symbols, Dynamic Type and VoiceOver support
-- **Bundle identifier:** `com.astear17.eyerest`
-- **Architecture:** feature-oriented SwiftUI modules with `Models`, `Services`, `ViewModels`, `Views`, and `Utilities` groups.
+- Platform: iPhone, iOS 17.0+, Swift 5.9 language mode
+- UI: SwiftUI with Dynamic Type and VoiceOver support
+- Bundle identifier: `com.astear17.eyerest`
+- Dependencies: Apple frameworks only; no network, accounts, analytics, or third-party packages
 
-Keep domain models (`Reminder`, `ReminderConfiguration`, `ReminderEvent`) independent of UI. A `ReminderScheduler` service should own `UNUserNotificationCenter` interaction; a local persistence service should store settings and completion history. View models derive countdown UI from absolute next-fire dates rather than assuming a continuously running timer.
+`Reminder.swift` owns reminder defaults, persistence models, quiet-hours policy, and stable per-kind staggering. `NotificationPlanner` is a Foundation-only pure planner. `NotificationService` owns `UNUserNotificationCenter`, authorization, request diffing, snoozes, categories, and action delivery. `AppViewModel` serializes reconciliation and owns persisted app state. Views mutate settings only through the view model.
 
-## Notifications and offline operation
+## Notification planning
 
-EyeRest should schedule local notifications for eye relaxation, hydration, blinking, posture, and movement independently. Each has enabled state, interval, custom text, next scheduled time, and snooze.
+iOS permits at most 64 pending local notifications per app. EyeRest reserves six slots for snoozes and plans at most 58 normal requests. Every enabled reminder receives up to three guaranteed occurrences; remaining slots are filled by the earliest next occurrence across kinds. This prevents a short interval from starving a long interval while using a similar time horizon for every kind.
 
-Request notification authorization when the user enables reminders. Use `UNNotificationInterruptionLevel.timeSensitive` as the intended default only when permission and the user’s iOS settings permit it; gracefully fall back to `.active`. “Quiet” should be a standard local notification without sound. Never use Critical Alerts.
+Normal request identifiers are `eyerest.<kind>.<epoch>`. Reconciliation removes obsolete normal identifiers and replaces the complete planned set so message and interruption-level changes take effect. Snoozes use one stable `eyerest.snooze.<kind>` identifier per kind and survive normal reconciliation. Pausing, disabling a kind, or marking that kind Done removes the applicable snooze.
 
-iOS limits the number of pending local notifications. Schedule a bounded batch per reminder, use stable identifiers, cancel/reconcile affected identifiers after a settings change, and replenish the batch when the app becomes active. Evaluate quiet hours before generating each trigger. Store and calculate with absolute dates to tolerate timezone and daylight-saving changes.
+All schedules use absolute dates and non-repeating triggers. The planner, displayed next date, and system request use `Calendar.autoupdatingCurrent`. Trigger components include the current time zone. Significant-time, time-zone, and locale changes cause a serialized rebuild. Quiet-hour end dates use calendar hour/minute construction for DST safety and are staggered by three minutes in stable reminder-kind order.
 
-No remote notifications, analytics, accounts, cloud storage, or network API are required. Settings and history remain on-device. iOS does not guarantee background execution, so scheduling must be correct even if the app is terminated.
+The queue is finite because iOS provides no indefinite background scheduler. The Home screen displays the shortest queued horizon; open EyeRest periodically to replenish it.
 
-## macOS build requirements
+## Persistence and localization
 
-1. macOS with a current Xcode version capable of targeting iOS 17.
-2. An Apple ID / developer team for device installation and signing.
-3. A physical iPhone XS or newer for notification and device validation.
+Preferences and completion history remain JSON data under `EyeRest.preferences.v1` and `EyeRest.completions.v1`. Decoding is field-tolerant and list elements are lossy, while wholly corrupt blobs are copied to a `.corrupt` backup key. Stored legacy English default messages migrate to `nil`; `nil` means use the current localized default, while a custom message remains unchanged across languages.
 
-Open the `.xcodeproj` or `.xcworkspace`, select an iOS 17+ deployment target, assign the bundle identifier and signing team, then build/run on device. Validate permission-denied paths, each reminder’s reschedule/cancel behavior, quiet hours, snooze, app restart persistence, timezone changes, and notification action handling.
+`Resources/Localizable.xcstrings` contains English source keys and Vietnamese translations. EyeRest follows the system or per-app language and has no in-app language switcher. Locale changes rebuild notification categories and pending content.
 
-## Unsigned IPA reality
+## Logic tests
 
-An archive made with `CODE_SIGNING_ALLOWED=NO` is useful for compilation or inspection, but it is not an installable iPhone app on its own. iOS requires a valid code signature for installation. A development-signed build from Xcode, AltStore, Sideloadly, or an authorized distribution channel is necessary to place an app on a normal device. Do not report an IPA as installable until the archive/export and target-device installation both succeed.
+The root Swift package compiles only Foundation-based models, persistence, and planner files. `Tests/EyeRestLogicTests` uses explicit calendars and time zones so quiet-hours, budget fairness, identifiers, migration, corrupt backups, and lossy history decoding run without an iOS simulator. It is intentionally separate from the hand-written Xcode project.
+
+## Device validation
+
+Use a physical iPhone for permission-denied UI, actual delivery, Time Sensitive fallback, Done/Snooze cold launches, rapid edits, time-zone changes, Vietnamese presentation, the 20-second session, quiet-hour staggering, upgrade preservation, and largest Dynamic Type sizes. The unsigned CI artifact proves compilation and package structure only.

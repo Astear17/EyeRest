@@ -37,7 +37,7 @@ struct ReminderRow: View {
 
             VStack(alignment: .leading) {
                 Text(reminder.kind.title)
-                Text(reminder.isEnabled ? "Every \(reminder.intervalMinutes) min · \(reminder.nextFireDate?.eyeRestTime ?? "—")" : "Off")
+                Text(reminder.isEnabled ? String(localized: "Every \(reminder.intervalMinutes) min · \(reminder.nextFireDate?.eyeRestTime ?? "—")") : String(localized: "Off"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -45,13 +45,16 @@ struct ReminderRow: View {
             Spacer()
 
             Toggle(
-                "\(reminder.kind.title) enabled",
+                String(localized: "\(reminder.kind.title) enabled"),
                 isOn: Binding(
                     get: { reminder.isEnabled },
                     set: { value in
-                        var changed = reminder
-                        changed.isEnabled = value
-                        model.update(changed)
+                        model.update(
+                            kind: reminder.kind,
+                            isEnabled: value,
+                            intervalMinutes: reminder.intervalMinutes,
+                            customMessage: reminder.customMessage
+                        )
                     }
                 )
             )

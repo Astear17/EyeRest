@@ -7,18 +7,52 @@ on:
       - 'EyeRest/**'
       - 'EyeRest.xcodeproj/**'
       - '.github/workflows/ios-build.yml'
+      - 'Package.swift'
+      - 'Tests/**'
   pull_request:
     branches: [main]
     paths:
       - 'EyeRest/**'
       - 'EyeRest.xcodeproj/**'
       - '.github/workflows/ios-build.yml'
+      - 'Package.swift'
+      - 'Tests/**'
   workflow_dispatch:
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
+  logic-tests:
+    name: Run Foundation logic tests
+    runs-on: macos-15
+    timeout-minutes: 15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 16.4
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -d "$DEVELOPER_DIR" ]]; then
+            echo "Expected Xcode 16.4 at $DEVELOPER_DIR, but it is unavailable." >&2
+            echo "Installed Xcode applications:" >&2
+            ls -d /Applications/Xcode*.app 2>/dev/null || true
+            exit 1
+          fi
+          sudo xcode-select --switch "$DEVELOPER_DIR"
+          xcodebuild -version
+
+      - name: Run logic tests
+        run: swift test
+
   build:
     name: Build unsigned iOS artifacts
     runs-on: macos-15
@@ -29,6 +63,9 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+
+      - name: Verify repository structure
+        run: node scripts/verify-repository.mjs
 
       - name: Prepare build paths
         shell: bash
@@ -99,6 +136,8 @@ jobs:
           version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_path/Info.plist")"
           build_number="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Info.plist")"
           bundle_identifier="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app_path/Info.plist")"
+          bundle_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleName' "$app_path/Info.plist")"
+          info_dictionary_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleInfoDictionaryVersion' "$app_path/Info.plist")"
           if [[ "$executable" != "$product_name" ]]; then
             echo "Expected CFBundleExecutable '$product_name', found '$executable'." >&2
             exit 1
@@ -111,10 +150,18 @@ jobs:
             echo "Unexpected bundle metadata: identifier=$bundle_identifier version=$version build=$build_number" >&2
             exit 1
           fi
+          if [[ -z "$bundle_name" || "$info_dictionary_version" != "6.0" ]]; then
+            echo "Unexpected bundle identity metadata: name=$bundle_name infoDictionaryVersion=$info_dictionary_version" >&2
+            exit 1
+          fi
           if [[ ! -x "$app_path/$executable" ]]; then
             echo "Missing or non-executable app binary: $app_path/$executable" >&2
             exit 1
           fi
+          test -d "$app_path/en.lproj"
+          test -d "$app_path/vi.lproj"
+          test -f "$app_path/en.lproj/Localizable.strings"
+          test -f "$app_path/vi.lproj/Localizable.strings"
           printf 'Validated bundle metadata: identifier=%s version=%s build=%s executable=%s packageType=%s\n' "$bundle_identifier" "$version" "$build_number" "$executable" "$package_type"
           /usr/bin/plutil -convert xml1 -o "$ARTIFACT_DIR/${product_name}-Info.plist" "$app_path/Info.plist"
           (

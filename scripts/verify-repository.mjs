@@ -6,6 +6,11 @@ const required = [
   '.github/workflows/pages.yml', 'EyeRest.xcodeproj/project.pbxproj',
   'EyeRest.xcodeproj/xcshareddata/xcschemes/EyeRest.xcscheme',
   '.github/workflows/ios-build.yml',
+  'Package.swift',
+  'Tests/EyeRestLogicTests/NotificationPlannerTests.swift',
+  'Tests/EyeRestLogicTests/PersistenceTests.swift',
+  'Tests/EyeRestLogicTests/QuietHoursTests.swift',
+  'EyeRest/Resources/Localizable.xcstrings',
   'EyeRest/EyeRestApp.swift', 'EyeRest/Services/NotificationService.swift', 'EyeRest/Services/PersistenceService.swift',
   'EyeRest/ViewModels/AppViewModel.swift', 'docs/IOS_DEVELOPMENT.md', 'docs/IOS_BUILD.md'
 ];
@@ -21,6 +26,7 @@ const infoPlist = readFileSync('EyeRest/Info.plist', 'utf8');
 const notificationService = readFileSync('EyeRest/Services/NotificationService.swift', 'utf8');
 const persistenceService = readFileSync('EyeRest/Services/PersistenceService.swift', 'utf8');
 const appViewModel = readFileSync('EyeRest/ViewModels/AppViewModel.swift', 'utf8');
+const stringCatalog = JSON.parse(readFileSync('EyeRest/Resources/Localizable.xcstrings', 'utf8'));
 
 function assertBalancedSwiftDelimiters(path) {
   const source = readFileSync(path, 'utf8');
@@ -76,8 +82,19 @@ if (!workflow.includes('path: website') || !workflow.includes("'website/**'")) t
 if (!pbxproj.includes('PRODUCT_BUNDLE_IDENTIFIER = com.astear17.eyerest') || !pbxproj.includes('IPHONEOS_DEPLOYMENT_TARGET = 17.0') || !pbxproj.includes('SWIFT_VERSION = 5.9')) throw new Error('iOS project settings are incorrect.');
 if (!scheme.includes('BlueprintIdentifier="300"') || !scheme.includes('BlueprintName="EyeRest"')) throw new Error('Shared EyeRest scheme does not reference the app target.');
 if (!infoPlist.includes('<key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>') || !infoPlist.includes('<key>CFBundlePackageType</key><string>APPL</string>')) throw new Error('Required application bundle metadata is missing.');
-for (const expected of ['name: EyeRest iOS Build', "'EyeRest/**'", 'runs-on: macos-15', 'Xcode_16.4.app', 'generic/platform=iOS', '-configuration Release', 'CODE_SIGNING_ALLOWED=NO', 'CFBundleExecutable', 'CFBundlePackageType', 'actions/upload-artifact@v4', 'retention-days: 14', 'pull_request:']) {
+for (const expected of ['<key>CFBundleName</key><string>$(PRODUCT_NAME)</string>', '<key>CFBundleInfoDictionaryVersion</key><string>6.0</string>', '<key>CFBundleDevelopmentRegion</key><string>$(DEVELOPMENT_LANGUAGE)</string>', '<key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>', '<key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>']) {
+  if (!infoPlist.includes(expected)) throw new Error(`Info.plist is missing: ${expected}`);
+}
+for (const expected of ['name: EyeRest iOS Build', "'EyeRest/**'", "'Package.swift'", "'Tests/**'", 'runs-on: macos-15', 'Xcode_16.4.app', 'swift test', 'generic/platform=iOS', '-configuration Release', 'CODE_SIGNING_ALLOWED=NO', 'node scripts/verify-repository.mjs', 'CFBundleExecutable', 'CFBundlePackageType', 'CFBundleName', 'CFBundleInfoDictionaryVersion', 'vi.lproj/Localizable.strings', 'en.lproj/Localizable.strings', 'cancel-in-progress: true', 'actions/upload-artifact@v4', 'retention-days: 14', 'pull_request:']) {
   if (!iosBuildWorkflow.includes(expected)) throw new Error(`iOS build workflow is missing: ${expected}`);
+}
+if (stringCatalog.sourceLanguage !== 'en' || stringCatalog.version !== '1.0') throw new Error('String catalog metadata is incorrect.');
+for (const [key, value] of Object.entries(stringCatalog.strings)) {
+  if (value.localizations?.vi?.stringUnit?.state !== 'translated' || !value.localizations.vi.stringUnit.value) throw new Error(`Missing Vietnamese translation: ${key}`);
+  if (value.localizations?.en?.stringUnit?.state !== 'translated' || value.localizations.en.stringUnit.value !== key) throw new Error(`Missing English source localization: ${key}`);
+}
+for (const key of ['Every %lld min · %@', 'Interval: %lld minutes', '%lld completed', '%lld seconds remaining', '%@ enabled', 'Countdown %@', 'Reminders are queued until %@. Open EyeRest to keep them going.']) {
+  if (!stringCatalog.strings[key]?.localizations?.vi?.stringUnit?.value) throw new Error(`Missing interpolated Vietnamese catalog key: ${key}`);
 }
 if (!notificationService.includes('timeSensitiveSetting') || !notificationService.includes('pendingNotificationRequests')) throw new Error('Expected local-notification scheduling safeguards are missing.');
 if (!persistenceService.includes('Array(completions.suffix(500))')) throw new Error('Completion-history persistence limit is missing.');
