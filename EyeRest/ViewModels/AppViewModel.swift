@@ -52,7 +52,19 @@ final class AppViewModel: ObservableObject {
 
     func launch() async {
         await notifications.refreshAuthorization()
-        if notifications.authorizationStatus == .notDetermined { _ = await notifications.requestAuthorization() }
+        if preferences.hasCompletedWelcome && notifications.authorizationStatus == .notDetermined {
+            _ = await notifications.requestAuthorization()
+        }
+        await reconcile()
+    }
+
+    func completeWelcome() async {
+        await notifications.refreshAuthorization()
+        if notifications.authorizationStatus == .notDetermined {
+            _ = await notifications.requestAuthorization()
+        }
+        preferences.hasCompletedWelcome = true
+        persistence.save(preferences)
         await reconcile()
     }
 

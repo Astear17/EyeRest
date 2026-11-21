@@ -23,6 +23,7 @@ const required = [
   'EyeRest/Models/BreakSession.swift',
   'Tests/EyeRestLogicTests/BreakActivityTests.swift',
   'EyeRest/Views/ActivityView.swift',
+  'EyeRest/Views/WelcomeView.swift',
   'design/app-icon.svg', 'scripts/generate-app-icon.mjs', 'EyeRest/Assets.xcassets/Contents.json',
   'EyeRest/Assets.xcassets/AccentColor.colorset/Contents.json', 'EyeRest/Assets.xcassets/AppIcon.appiconset/Contents.json',
   'EyeRest/Assets.xcassets/AppIcon.appiconset/AppIcon.png',
@@ -104,7 +105,7 @@ if (!infoPlist.includes('<key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)
 for (const expected of ['<key>CFBundleName</key><string>$(PRODUCT_NAME)</string>', '<key>CFBundleInfoDictionaryVersion</key><string>6.0</string>', '<key>CFBundleDevelopmentRegion</key><string>$(DEVELOPMENT_LANGUAGE)</string>', '<key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>', '<key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>']) {
   if (!infoPlist.includes(expected)) throw new Error(`Info.plist is missing: ${expected}`);
 }
-for (const expected of ['name: EyeRest iOS Build', "'EyeRest/**'", "'Package.swift'", "'Tests/**'", 'runs-on: macos-15', 'Xcode_16.4.app', 'swift test', 'generic/platform=iOS', '-configuration Release', 'CODE_SIGNING_ALLOWED=NO', 'node scripts/verify-repository.mjs', 'CFBundleExecutable', 'CFBundlePackageType', 'CFBundleName', 'CFBundleInfoDictionaryVersion', 'vi.lproj/Localizable.strings', 'en.lproj/Localizable.strings', 'cancel-in-progress: true', 'actions/upload-artifact@v4', 'retention-days: 14', 'pull_request:']) {
+for (const expected of ['name: EyeRest iOS Build', "'EyeRest/**'", "'Package.swift'", "'Tests/**'", 'runs-on: macos-15', 'Xcode_16.4.app', 'swift test', 'generic/platform=iOS', '-configuration Release', 'CODE_SIGNING_ALLOWED=NO', 'node scripts/verify-repository.mjs', 'CFBundleExecutable', 'CFBundlePackageType', 'CFBundleName', 'CFBundleInfoDictionaryVersion', 'vi.lproj/Localizable.strings', 'en.lproj/Localizable.strings', 'Assets.car', 'CFBundleIcons', 'CFBundleIconName', 'AppIcon60x60', 'cancel-in-progress: true', 'actions/upload-artifact@v4', 'retention-days: 14', 'pull_request:']) {
   if (!iosBuildWorkflow.includes(expected)) throw new Error(`iOS build workflow is missing: ${expected}`);
 }
 if (stringCatalog.sourceLanguage !== 'en' || stringCatalog.version !== '1.0') throw new Error('String catalog metadata is incorrect.');

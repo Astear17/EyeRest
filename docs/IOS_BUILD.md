@@ -20,7 +20,7 @@ For normal device development, select a valid Apple development team and build t
 
 ## GitHub Actions
 
-The **EyeRest iOS Build** workflow runs for relevant pushes, pull requests targeting `main`, and manual dispatch. It pins GitHub `macos-15` to `/Applications/Xcode_16.4.app`, runs the repository verifier, builds Release for generic iOS with code signing disabled, validates the processed app metadata and localization resources, packages the unsigned app and IPA, and integrity-checks the IPA. A separate job runs the Foundation-only Swift package tests.
+The **EyeRest iOS Build** workflow runs for relevant pushes, pull requests targeting `main`, and manual dispatch. It pins GitHub `macos-15` to `/Applications/Xcode_16.4.app`, runs the repository verifier, builds Release for generic iOS with code signing disabled, validates the processed app metadata, localization resources, compiled `Assets.car`, and processed AppIcon metadata, packages the unsigned app and IPA, and integrity-checks the IPA. The workflow log also reports whether Xcode emitted a standalone `AppIcon60x60@2x.png`; the asset catalog remains authoritative either way. A separate job runs the Foundation-only Swift package tests.
 
 The 14-day artifact remains named `eyerest-ios-unsigned-<sha>` and contains:
 
@@ -43,7 +43,7 @@ A P12 MAC verification failure is a credential or password problem, not an IPA s
 - iOS controls final delivery; Focus, summaries, permissions, battery state, and system policy can delay or suppress notifications.
 - EyeRest uses absolute, non-repeating requests so quiet hours and time-zone changes can be handled explicitly.
 - At most 58 normal requests are queued, reserving six of the system's 64 slots for snoozes. Open EyeRest periodically to replenish the finite queue.
-- Snooze is one ten-minute request per reminder kind and deliberately ignores quiet hours.
+- Snooze is one absolute request per reminder kind and is adjusted through the same active-day and quiet-hours rules as regular reminders.
 - English and Vietnamese follow the system or per-app language; changing locale causes pending notification text to be rebuilt.
 - There is no continuous background process. Countdown rendering occurs only while the app is visible.
 

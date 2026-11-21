@@ -11,6 +11,7 @@ struct SettingsView: View {
     @State private var backupDocument: BackupDocument?
     @State private var importPreview: BackupPreview?
     @State private var dataError: String?
+    @State private var showingWelcome = false
 
     var body: some View {
         NavigationStack {
@@ -109,6 +110,7 @@ struct SettingsView: View {
 
                 Section("About") {
                     LabeledContent("Version", value: appVersion)
+                    Button("Show welcome") { showingWelcome = true }
                     Text("EyeRest works fully offline. No analytics, advertising, accounts, tracking, or external services.")
                 }
             }
@@ -170,6 +172,10 @@ struct SettingsView: View {
                 Button("OK") { dataError = nil }
             } message: {
                 Text(dataError ?? "")
+            }
+            .sheet(isPresented: $showingWelcome) {
+                WelcomeView(isReplay: true)
+                    .environmentObject(model)
             }
         }
     }
