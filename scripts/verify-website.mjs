@@ -68,10 +68,10 @@ for (const [name, foreground, background] of [
 const allHTML = [...pageSources.values()].join('\n');
 for (const stale of ['Natural blinking', 'not available to install', 'macOS/Xcode development', 'Look into the distance for 30 seconds.']) if (allHTML.includes(stale)) throw new Error(`Stale website wording remains: ${stale}`);
 const install = pageSources.get('install.html');
-for (const expected of ['Feather', 'KSign', 'Sideloadly', 'AltStore', 'Not yet tested', 'Developer Mode', 'about seven days', 'SHA-256']) if (!install.includes(expected)) throw new Error(`Install guide is missing: ${expected}`);
+for (const expected of ['Feather', 'KSign', 'Sideloadly', 'AltStore', 'Not yet tested', 'Developer Mode', 'about seven days', 'SHA-256', 'first EyeRest release has not been published yet', 'data-copy-command']) if (!install.includes(expected)) throw new Error(`Install guide is missing: ${expected}`);
 const css = readFileSync(join(root, 'assets/styles.css'), 'utf8');
 const script = readFileSync(join(root, 'assets/main.js'), 'utf8');
 if (!css.includes(':focus-visible') || !css.includes('prefers-reduced-motion') || !css.includes('@media(max-width:850px)')) throw new Error('Accessibility or mobile CSS is incomplete.');
-if (!script.includes('aria-expanded') || !script.includes('data-open') || !script.includes('localStorage')) throw new Error('Theme or mobile navigation behavior is incomplete.');
+if (!script.includes('aria-expanded') || !script.includes('data-open') || !script.includes('localStorage') || !script.includes('navigator.clipboard')) throw new Error('Theme, mobile navigation, or copy behavior is incomplete.');
 if (!pageSources.get('index.html').includes('aria-label="Illustration of EyeRest')) throw new Error('The app mockup is not labelled as an illustration.');
 console.log(`Website verification passed for ${pages.length} HTML pages and ${required.length} required files.`);
