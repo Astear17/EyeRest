@@ -37,6 +37,35 @@ final class ActivityLogTests: XCTestCase {
         XCTAssertEqual(log.bestStreak(calendar: calendar), 3)
     }
 
+    func testSeededRhythmTotalsAndRecentWindows() {
+        let calendar = testCalendar()
+        let now = testDate(2026, 11, 20, 18, 0, calendar: calendar)
+        var log = ActivityLog()
+        for (day, seconds) in [(18, 20), (19, 60), (20, 120)] {
+            log.append(ActivityEvent(
+                kind: .eyeRest,
+                completedAt: testDate(2026, 11, day, 12, 0, calendar: calendar),
+                durationSeconds: seconds,
+                source: .guided,
+                calendar: calendar
+            ))
+        }
+        log.append(ActivityEvent(
+            kind: .movement,
+            completedAt: testDate(2026, 10, 21, 12, 0, calendar: calendar),
+            durationSeconds: 120,
+            source: .guided,
+            calendar: calendar
+        ))
+
+        XCTAssertEqual(log.currentStreak(asOf: now, calendar: calendar), 3)
+        XCTAssertEqual(log.bestStreak(calendar: calendar), 3)
+        XCTAssertEqual(log.totalBreakSeconds(asOf: now, calendar: calendar), 200)
+        XCTAssertEqual(log.totalsForLast(days: 7, asOf: now, calendar: calendar).count, 7)
+        XCTAssertEqual(log.totalsForLast(days: 7, asOf: now, calendar: calendar).suffix(3).map(\.completionCount), [1, 1, 1])
+        XCTAssertEqual(log.recentEvents(days: 30, asOf: now, calendar: calendar).count, 3)
+    }
+
     func testDayKeyRemainsStableAcrossTimeZoneChange() throws {
         let vietnam = testCalendar("Asia/Ho_Chi_Minh")
         let losAngeles = testCalendar("America/Los_Angeles")

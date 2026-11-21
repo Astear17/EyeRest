@@ -39,6 +39,9 @@ final class AppViewModel: ObservableObject {
     var nextReminder: ReminderConfiguration? { guard !isPaused else { return nil }; return enabledReminders.compactMap { item in item.nextFireDate.map { (item, $0) } }.min { $0.1 < $1.1 }?.0 }
     var nextDate: Date? { nextReminder?.nextFireDate }
     var todayCount: Int { activityLog.todayCount() }
+    var currentStreak: Int { activityLog.currentStreak() }
+    var bestStreak: Int { activityLog.bestStreak() }
+    var totalBreakSecondsThisWeek: Int { activityLog.totalBreakSeconds() }
     var canScheduleNotifications: Bool { authorizationStatus == .authorized || authorizationStatus == .provisional || authorizationStatus == .ephemeral }
 
     func countdownText(to date: Date?, now: Date) -> String {

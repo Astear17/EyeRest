@@ -152,6 +152,23 @@ struct ActivityLog: Codable, Equatable {
         weekTotals(asOf: date, calendar: calendar).reduce(0) { $0 + $1.seconds }
     }
 
+    func totalsForLast(days: Int, asOf date: Date = .now, calendar: Calendar = .autoupdatingCurrent) -> [DailyTotal] {
+        let count = max(0, days)
+        let today = calendar.startOfDay(for: date)
+        return (0..<count).reversed().compactMap { offset in
+            guard let day = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
+            let key = ActivityEvent.dayKey(for: day, calendar: calendar)
+            return total(for: key) ?? DailyTotal(dayKey: key)
+        }
+    }
+
+    func recentEvents(days: Int, asOf date: Date = .now, calendar: Calendar = .autoupdatingCurrent) -> [ActivityEvent] {
+        let count = max(0, days)
+        guard count > 0,
+              let cutoff = calendar.date(byAdding: .day, value: -(count - 1), to: calendar.startOfDay(for: date)) else { return [] }
+        return events.filter { $0.completedAt >= cutoff && $0.completedAt <= date }.sorted { $0.completedAt > $1.completedAt }
+    }
+
     func total(for dayKey: String) -> DailyTotal? {
         dailyTotals.first { $0.dayKey == dayKey }
     }

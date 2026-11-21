@@ -22,6 +22,7 @@ const required = [
   'EyeRest/Models/BreakActivity.swift',
   'EyeRest/Models/BreakSession.swift',
   'Tests/EyeRestLogicTests/BreakActivityTests.swift',
+  'EyeRest/Views/ActivityView.swift',
   'design/app-icon.svg', 'scripts/generate-app-icon.mjs', 'EyeRest/Assets.xcassets/Contents.json',
   'EyeRest/Assets.xcassets/AccentColor.colorset/Contents.json', 'EyeRest/Assets.xcassets/AppIcon.appiconset/Contents.json',
   'EyeRest/Assets.xcassets/AppIcon.appiconset/AppIcon.png',
@@ -111,7 +112,7 @@ for (const [key, value] of Object.entries(stringCatalog.strings)) {
   if (value.localizations?.vi?.stringUnit?.state !== 'translated' || !value.localizations.vi.stringUnit.value) throw new Error(`Missing Vietnamese translation: ${key}`);
   if (value.localizations?.en?.stringUnit?.state !== 'translated' || value.localizations.en.stringUnit.value !== key) throw new Error(`Missing English source localization: ${key}`);
 }
-for (const key of ['Every %lld min · %@', 'Interval: %lld minutes', '%lld completed', '%lld seconds remaining', '%@ enabled', 'Countdown %@', 'Reminders are queued until %@. Open EyeRest to keep them going.', 'Snooze %lld min', '%u more reminders']) {
+for (const key of ['Every %lld min · %@', 'Interval: %lld minutes', '%lld completed', '%lld seconds remaining', '%@ enabled', 'Countdown %@', 'Reminders are queued until %@. Open EyeRest to keep them going.', 'Snooze %lld min', '%u more reminders', '%lld-day streak', '%lld days', '%@ min', '%@: %lld completions', 'Last 7 days: %@', '%lld min', '%lld sec']) {
   if (!stringCatalog.strings[key]?.localizations?.vi?.stringUnit?.value) throw new Error(`Missing interpolated Vietnamese catalog key: ${key}`);
 }
 if (!notificationService.includes('timeSensitiveSetting') || !notificationService.includes('pendingNotificationRequests')) throw new Error('Expected local-notification scheduling safeguards are missing.');

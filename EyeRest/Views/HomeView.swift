@@ -19,7 +19,12 @@ struct HomeView: View {
                     HStack {
                         Label("Today", systemImage: "checkmark.circle")
                         Spacer()
-                        Text("\(model.todayCount) completed").fontWeight(.semibold)
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("\(model.todayCount) completed").fontWeight(.semibold)
+                            Text(String.localizedStringWithFormat(String(localized: "%lld-day streak"), model.currentStreak))
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     .font(.headline)
                     if let queuedUntil = model.queuedUntil {
