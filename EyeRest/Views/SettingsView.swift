@@ -81,6 +81,10 @@ struct SettingsView: View {
                         ForEach(AppPreferences.Appearance.allCases) { Text($0.title).tag($0) }
                     }
                     .pickerStyle(.segmented)
+                    Toggle("Haptics", isOn: Binding(
+                        get: { model.preferences.hapticsEnabled },
+                        set: { value in model.updatePreferences { $0.hapticsEnabled = value } }
+                    ))
                 }
 
                 Section("Data") {

@@ -5,7 +5,6 @@ struct HomeView: View {
     @EnvironmentObject private var model: AppViewModel
     @Environment(\.openURL) private var openURL
     @Binding var settingsTab: Int
-    @State private var showingEyeRestSession = false
 
     var body: some View {
         NavigationStack {
@@ -41,11 +40,6 @@ struct HomeView: View {
                         .accessibilityLabel("Open settings")
                 }
             }
-            .sheet(isPresented: $showingEyeRestSession) {
-                EyeRestSessionView(isPresented: $showingEyeRestSession)
-                    .environmentObject(model)
-                    .interactiveDismissDisabled(true)
-            }
         }
     }
 
@@ -67,7 +61,7 @@ struct HomeView: View {
     }
 
     private var controls: some View {
-        HStack(spacing: 12) {
+        VStack(spacing: 12) {
             Menu {
                 if model.isPaused { Button("Resume reminders") { model.resumeReminders() } }
                 Button("Pause for 1 hour") { model.pause(for: 60 * 60) }
@@ -79,11 +73,22 @@ struct HomeView: View {
                 } icon: {
                     Image(systemName: model.isPaused ? "play.fill" : "pause.fill")
                 }
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, minHeight: 44)
             }
             .buttonStyle(.borderedProminent)
-            Button { showingEyeRestSession = true } label: {
-                Label("Eye rest now", systemImage: "eye").frame(maxWidth: .infinity)
+            Button { model.requestBreak(.eyeRest) } label: {
+                Label("Eye rest now", systemImage: "eye").frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .buttonStyle(.bordered)
+            Menu {
+                ForEach(BreakActivity.all) { activity in
+                    Button { model.requestBreak(activity) } label: {
+                        Label(activity.title, systemImage: activity.symbol)
+                    }
+                }
+            } label: {
+                Label("Start a break", systemImage: "play.circle")
+                    .frame(maxWidth: .infinity, minHeight: 44)
             }
             .buttonStyle(.bordered)
         }

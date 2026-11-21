@@ -2,90 +2,183 @@ import SwiftUI
 import UIKit
 
 struct EyeRestSessionView: View {
-    private static let duration: TimeInterval = 20
     @EnvironmentObject private var model: AppViewModel
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
-    @Binding var isPresented: Bool
-    @State private var endDate: Date
-    @State private var completed = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .title) private var ringSize: CGFloat = 190
+
+    let activity: BreakActivity
+    @State private var session: BreakSession
+    @State private var currentStepIndex = 0
+    @State private var stepFeedback = 0
+    @State private var completionFeedback = 0
+    @State private var completionPulse = false
     @State private var previousIdleTimerDisabled = false
     @State private var finishTask: Task<Void, Never>?
 
-    init(isPresented: Binding<Bool>) {
-        _isPresented = isPresented
-        _endDate = State(initialValue: Date.now.addingTimeInterval(Self.duration))
+    init(activity: BreakActivity) {
+        self.activity = activity
+        _session = State(initialValue: BreakSession(
+            duration: activity.duration,
+            stepDurations: activity.stepDurations
+        ))
     }
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 28) {
-                Text(completed ? String(localized: "Rest complete") : String(localized: "Look at something about 20 feet (6 m) away."))
-                    .font(.title2.weight(.semibold))
-                    .multilineTextAlignment(.center)
-                TimelineView(.periodic(from: .now, by: 0.25)) { context in
-                    let remaining = secondsRemaining(at: context.date)
-                    ZStack {
-                        Circle().stroke(.secondary.opacity(0.2), lineWidth: 14)
-                        Circle()
-                            .trim(from: 0, to: progress(at: context.date))
-                            .stroke(.tint, style: StrokeStyle(lineWidth: 14, lineCap: .round))
-                            .rotationEffect(.degrees(-90))
-                        Image(systemName: completed ? "checkmark" : "eye")
-                            .font(.system(.largeTitle, design: .rounded, weight: .semibold))
-                    }
-                    .frame(width: 190, height: 190)
-                    .accessibilityLabel("Eye rest")
-                    .accessibilityValue(completed ? String(localized: "Rest complete") : String(localized: "\(remaining) seconds remaining"))
-                    .onChange(of: remaining) { _, value in
-                        if value == 0 { finish() }
-                    }
-                    if !completed {
-                        Text("\(remaining) seconds remaining")
-                            .font(.headline)
-                            .monospacedDigit()
+            ScrollView {
+                VStack(spacing: 24) {
+                    timeline
+                    if let safetyNote = activity.safetyNote {
+                        Label(safetyNote, systemImage: "exclamationmark.triangle")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .accessibilityElement(children: .combine)
                     }
                 }
-                if !completed {
-                    Button("Cancel", role: .cancel) { isPresented = false }
-                        .buttonStyle(.bordered)
-                        .controlSize(.large)
-                }
+                .frame(maxWidth: .infinity)
+                .padding(24)
             }
-            .padding(32)
-            .navigationTitle("Eye rest")
+            .navigationTitle(activity.title)
             .navigationBarTitleDisplayMode(.inline)
+            .safeAreaInset(edge: .bottom) { controls }
         }
-        .sensoryFeedback(.success, trigger: completed)
+        .sensoryFeedback(.selection, trigger: stepFeedback) { _, _ in model.preferences.hapticsEnabled }
+        .sensoryFeedback(.success, trigger: completionFeedback) { _, _ in model.preferences.hapticsEnabled }
         .onAppear {
             previousIdleTimerDisabled = UIApplication.shared.isIdleTimerDisabled
             UIApplication.shared.isIdleTimerDisabled = true
+            session.start()
         }
         .onDisappear {
             finishTask?.cancel()
             UIApplication.shared.isIdleTimerDisabled = previousIdleTimerDisabled
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase != .active && !completed { isPresented = false }
+            if phase != .active { session.pause() }
         }
     }
 
-    private func secondsRemaining(at date: Date) -> Int {
-        max(0, Int(ceil(endDate.timeIntervalSince(date))))
+    @ViewBuilder
+    private var timeline: some View {
+        if reduceMotion {
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                sessionContent(at: context.date)
+            }
+        } else {
+            TimelineView(.animation(paused: session.state != .running)) { context in
+                sessionContent(at: context.date)
+            }
+        }
     }
 
-    private func progress(at date: Date) -> Double {
-        min(1, max(0, endDate.timeIntervalSince(date) / Self.duration))
+    private func sessionContent(at date: Date) -> some View {
+        let remaining = Int(ceil(session.remaining(at: date)))
+        let stepIndex = session.currentStepIndex(at: date)
+        let step = activity.steps[stepIndex]
+        let completed = session.state == .completed
+
+        return VStack(spacing: 24) {
+            ZStack {
+                Circle().stroke(.secondary.opacity(0.2), lineWidth: 14)
+                Circle()
+                    .trim(from: 0, to: session.progress(at: date))
+                    .stroke(.tint, style: StrokeStyle(lineWidth: 14, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .opacity(session.state == .paused ? 0.45 : 1)
+                Image(systemName: completed ? "checkmark" : activity.symbol)
+                    .font(.system(.largeTitle, design: .rounded, weight: .semibold))
+                    .scaleEffect(completed && completionPulse ? 1.18 : 1)
+            }
+            .frame(width: ringSize, height: ringSize)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(activity.title)
+            .accessibilityValue(completed ? String(localized: "Break complete") : String(localized: "\(remaining) seconds remaining"))
+
+            VStack(spacing: 10) {
+                Text(completed ? String(localized: "Break complete") : step.title)
+                    .font(.title2.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                if !completed {
+                    Text(step.instruction)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                    Text("\(remaining) seconds remaining")
+                        .font(.headline)
+                        .monospacedDigit()
+                }
+            }
+            .id(completed ? "complete" : "step-\(stepIndex)")
+            .transition(stepTransition)
+            .accessibilityElement(children: .combine)
+            .onChange(of: remaining) { _, value in
+                updateSession(at: date, remaining: value, stepIndex: stepIndex)
+            }
+        }
     }
 
-    private func finish() {
-        guard !completed else { return }
-        completed = true
-        model.complete(.eyeRest)
-        UIAccessibility.post(notification: .announcement, argument: String(localized: "Rest complete"))
+    @ViewBuilder
+    private var controls: some View {
+        VStack(spacing: 12) {
+            switch session.state {
+            case .running:
+                Button("Pause") { session.pause() }
+                    .buttonStyle(.borderedProminent)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+            case .paused:
+                Button("Resume") { session.resume() }
+                    .buttonStyle(.borderedProminent)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+            case .completed:
+                Button("Done") { dismiss() }
+                    .buttonStyle(.borderedProminent)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+            case .idle, .cancelled:
+                EmptyView()
+            }
+            if session.state == .running || session.state == .paused {
+                Button("End", role: .cancel) {
+                    session.cancel()
+                    dismiss()
+                }
+                .buttonStyle(.bordered)
+                .frame(maxWidth: .infinity, minHeight: 44)
+            }
+        }
+        .controlSize(.large)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 12)
+        .background(.bar)
+    }
+
+    private var stepTransition: AnyTransition {
+        reduceMotion ? .identity : .opacity.combined(with: .move(edge: .bottom))
+    }
+
+    private func updateSession(at date: Date, remaining: Int, stepIndex: Int) {
+        if stepIndex != currentStepIndex {
+            currentStepIndex = stepIndex
+            stepFeedback += 1
+        }
+        guard remaining == 0, session.update(at: date) else { return }
+        model.complete(
+            activity.reminderKind,
+            source: .guided,
+            durationSeconds: Int(activity.duration),
+            activityID: activity.id
+        )
+        completionFeedback += 1
+        UIAccessibility.post(notification: .announcement, argument: String(localized: "Break complete"))
+        guard !reduceMotion else { return }
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.55)) { completionPulse = true }
         finishTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            try? await Task.sleep(nanoseconds: 260_000_000)
             guard !Task.isCancelled else { return }
-            isPresented = false
+            withAnimation(.easeOut(duration: 0.18)) { completionPulse = false }
         }
     }
 }

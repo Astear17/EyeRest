@@ -23,6 +23,7 @@
   018 /* BackupDocument.swift */ = {isa = PBXBuildFile; fileRef = 120; };
   019 /* ScheduleRules.swift */ = {isa = PBXBuildFile; fileRef = 121; };
   020 /* BreakSession.swift */ = {isa = PBXBuildFile; fileRef = 122; };
+  021 /* BreakActivity.swift */ = {isa = PBXBuildFile; fileRef = 123; };
 /* End PBXBuildFile section */
 /* Begin PBXFileReference section */
   100 = {isa = PBXFileReference; lastKnownFileType = wrapper.application; path = EyeRest.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -48,11 +49,12 @@
   120 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupDocument.swift; sourceTree = "<group>"; };
   121 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleRules.swift; sourceTree = "<group>"; };
   122 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakSession.swift; sourceTree = "<group>"; };
+  123 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakActivity.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 /* Begin PBXGroup section */
   200 = {isa = PBXGroup; children = (201, 100); sourceTree = "<group>"; };
   201 = {isa = PBXGroup; path = EyeRest; sourceTree = "<group>"; children = (101, 202, 203, 204, 205, 206, 207, 118, 113, 114); };
-  202 = {isa = PBXGroup; path = Models; sourceTree = "<group>"; children = (102,103,122); };
+  202 = {isa = PBXGroup; path = Models; sourceTree = "<group>"; children = (102,103,122,123); };
   203 = {isa = PBXGroup; path = Services; sourceTree = "<group>"; children = (104,105,115,119,121); };
   204 = {isa = PBXGroup; path = ViewModels; sourceTree = "<group>"; children = (106); };
   205 = {isa = PBXGroup; path = Views; sourceTree = "<group>"; children = (107,108,109,110,111,116); };
@@ -69,7 +71,7 @@
   302 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (015,016); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 /* Begin PBXSourcesBuildPhase section */
-  301 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (001,002,003,004,005,006,007,008,009,010,011,012,013,014,017,018,019,020); runOnlyForDeploymentPostprocessing = 0; };
+  301 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (001,002,003,004,005,006,007,008,009,010,011,012,013,014,017,018,019,020,021); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 /* Begin XCBuildConfiguration section */
   500 = {isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; }; name = Debug; };

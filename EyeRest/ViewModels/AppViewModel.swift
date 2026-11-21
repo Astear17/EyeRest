@@ -10,6 +10,7 @@ final class AppViewModel: ObservableObject {
     @Published private(set) var isTimeSensitiveAvailable = false
     @Published private(set) var queuedUntil: Date?
     @Published private(set) var canUndoImport = false
+    @Published private(set) var requestedBreakActivity: BreakActivity?
     @Published var showPermissionAlert = false
     private let persistence = PersistenceService()
     private let activityStore = ActivityStore()
@@ -139,6 +140,9 @@ final class AppViewModel: ObservableObject {
     }
     func resumeReminders() { preferences.pausedUntil = nil; saveAndReschedule() }
 
+    func requestBreak(_ activity: BreakActivity) { requestedBreakActivity = activity }
+    func consumeRequestedBreak() { requestedBreakActivity = nil }
+
     func resetDefaults() {
         preferences.reminders = AppPreferences.makeDefault().reminders
         saveAndReschedule()
@@ -253,5 +257,9 @@ final class AppViewModel: ObservableObject {
     private func handle(kind: ReminderKind, action: String) {
         if action == NotificationService.doneAction { complete(kind, source: .notificationAction) }
         else if action == NotificationService.snoozeAction { snooze(kind) }
+        else if action == UNNotificationDefaultActionIdentifier,
+                let activity = BreakActivity.defaultActivity(for: kind) {
+            requestBreak(activity)
+        }
     }
 }
