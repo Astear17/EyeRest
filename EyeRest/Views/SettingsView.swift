@@ -1,10 +1,17 @@
 import SwiftUI
 import UserNotifications
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @EnvironmentObject private var model: AppViewModel
     @Environment(\.openURL) private var openURL
     @State private var showingResetConfirmation = false
+    @State private var showingExporter = false
+    @State private var showingImporter = false
+    @State private var backupDocument: BackupDocument?
+    @State private var importPreview: BackupPreview?
+    @State private var dataError: String?
+    @State private var showingWelcome = false
 
     var body: some View {
         NavigationStack {
@@ -36,11 +43,65 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Schedule") {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack {
+                            ForEach(1...7, id: \.self) { weekday in
+                                let selected = model.preferences.activeDays.contains(weekday)
+                                Button {
+                                    model.updatePreferences { preferences in
+                                        if preferences.activeDays.contains(weekday), preferences.activeDays.count > 1 { preferences.activeDays.remove(weekday) }
+                                        else { preferences.activeDays.insert(weekday) }
+                                    }
+                                } label: {
+                                    HStack(spacing: 3) {
+                                        if selected { Image(systemName: "checkmark") }
+                                        Text(Calendar.autoupdatingCurrent.shortWeekdaySymbols[weekday - 1])
+                                    }
+                                        .frame(minWidth: 36, minHeight: 44)
+                                }
+                                .buttonStyle(.bordered)
+                                .buttonBorderShape(.capsule)
+                                .tint(selected ? .accentColor : .secondary)
+                                .accessibilityLabel(Calendar.autoupdatingCurrent.weekdaySymbols[weekday - 1])
+                                .accessibilityValue(selected ? String(localized: "Selected") : String(localized: "Not selected"))
+                            }
+                        }
+                    }
+                    Button("Work week") {
+                        model.updatePreferences {
+                            $0.activeDays = [2, 3, 4, 5, 6]
+                            $0.quietHours = QuietHours(enabled: true, startMinutes: 18 * 60, endMinutes: 9 * 60)
+                        }
+                    }
+                    Picker("Snooze", selection: Binding(get: { model.preferences.snoozeMinutes }, set: { value in model.updatePreferences { $0.snoozeMinutes = value } })) {
+                        Text("Off").tag(Int?.none)
+                        ForEach([5, 10, 15], id: \.self) { Text("\($0) minutes").tag(Int?.some($0)) }
+                    }
+                }
+
                 Section("Appearance") {
                     Picker("Theme", selection: Binding(get: { model.preferences.appearance }, set: { value in model.updatePreferences { $0.appearance = value } })) {
                         ForEach(AppPreferences.Appearance.allCases) { Text($0.title).tag($0) }
                     }
-                    .pickerStyle(.segmented)
+                    Toggle("Haptics", isOn: Binding(
+                        get: { model.preferences.hapticsEnabled },
+                        set: { value in model.updatePreferences { $0.hapticsEnabled = value } }
+                    ))
+                }
+
+                Section("Data") {
+                    Button("Export backup") { prepareExport() }
+                    Button("Import backup") { showingImporter = true }
+                    if model.canUndoImport {
+                        Button("Undo last import") {
+                            do { try model.undoLastImport() }
+                            catch { dataError = String(localized: "The previous data could not be restored.") }
+                        }
+                    }
+                    Text("Backups include settings and activity history. Notification permission and scheduled alerts are never included.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
 
                 Section {
@@ -51,6 +112,7 @@ struct SettingsView: View {
 
                 Section("About") {
                     LabeledContent("Version", value: appVersion)
+                    Button("Show welcome") { showingWelcome = true }
                     Text("EyeRest works fully offline. No analytics, advertising, accounts, tracking, or external services.")
                 }
             }
@@ -67,11 +129,104 @@ struct SettingsView: View {
             } message: {
                 Text("Enable notifications for EyeRest in iPhone Settings to receive reminders.")
             }
+            .fileExporter(
+                isPresented: $showingExporter,
+                document: backupDocument,
+                contentType: .json,
+                defaultFilename: backupFilename
+            ) { result in
+                if case .failure = result { dataError = String(localized: "The backup could not be exported.") }
+                backupDocument = nil
+            }
+            .fileImporter(isPresented: $showingImporter, allowedContentTypes: [.json], allowsMultipleSelection: false) { result in
+                do {
+                    let urls = try result.get()
+                    guard let url = urls.first else { throw CocoaError(.fileReadNoSuchFile) }
+                    let accessing = url.startAccessingSecurityScopedResource()
+                    defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+                    importPreview = try model.previewBackup(Data(contentsOf: url))
+                } catch let error as BackupCodecError {
+                    dataError = importErrorMessage(error)
+                } catch {
+                    dataError = String(localized: "This file is not a valid EyeRest backup.")
+                }
+            }
+            .confirmationDialog("Import this backup?", isPresented: Binding(
+                get: { importPreview != nil },
+                set: { if !$0 { importPreview = nil } }
+            ), titleVisibility: .visible) {
+                Button("Import and replace settings") {
+                    guard let preview = importPreview else { return }
+                    do { try model.applyBackup(preview) }
+                    catch { dataError = String(localized: "The backup could not be imported. Your data was not changed.") }
+                    importPreview = nil
+                }
+                Button("Cancel", role: .cancel) { importPreview = nil }
+            } message: {
+                if let preview = importPreview {
+                    Text(importSummary(preview))
+                }
+            }
+            .alert("Data could not be updated", isPresented: Binding(
+                get: { dataError != nil },
+                set: { if !$0 { dataError = nil } }
+            )) {
+                Button("OK") { dataError = nil }
+            } message: {
+                Text(dataError ?? "")
+            }
+            .sheet(isPresented: $showingWelcome) {
+                WelcomeView(isReplay: true)
+                    .environmentObject(model)
+            }
         }
     }
 
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
+    }
+
+    private var backupFilename: String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.dateFormat = "yyyy-MM-dd"
+        return "EyeRest-Backup-\(formatter.string(from: .now)).json"
+    }
+
+    private func prepareExport() {
+        do {
+            backupDocument = BackupDocument(data: try model.backupData(appVersion: appVersion))
+            showingExporter = true
+        } catch {
+            dataError = String(localized: "The backup could not be exported.")
+        }
+    }
+
+    private func importSummary(_ preview: BackupPreview) -> String {
+        let range: String
+        if let earliest = preview.earliestDate, let latest = preview.latestDate {
+            range = "\(earliest.formatted(date: .abbreviated, time: .omitted)) – \(latest.formatted(date: .abbreviated, time: .omitted))"
+        } else {
+            range = String(localized: "No activity dates")
+        }
+        return String.localizedStringWithFormat(
+            String(localized: "%lld activities across %lld days\n%@"),
+            preview.eventCount,
+            preview.dailyTotalCount,
+            range
+        )
+    }
+
+    private func importErrorMessage(_ error: BackupCodecError) -> String {
+        switch error {
+        case .newerSchema:
+            return String(localized: "This backup was created by a newer version of EyeRest.")
+        case .checksumMismatch:
+            return String(localized: "This backup is damaged or has been changed.")
+        default:
+            return String(localized: "This file is not a valid EyeRest backup.")
+        }
     }
 
     private func timeBinding(start: Bool) -> Binding<Date> {

@@ -14,7 +14,7 @@ enum NotificationPlanner {
     static let guaranteedPerKind = 3
 
     static func plan(preferences: AppPreferences, now: Date, calendar: Calendar = .autoupdatingCurrent) -> [PlannedNotification] {
-        guard !preferences.isPaused else { return [] }
+        if preferences.pausedUntil == .distantFuture { return [] }
         let enabled = ReminderKind.allCases.compactMap { kind in
             preferences.reminders.first { $0.kind == kind && $0.isEnabled }
         }
@@ -52,12 +52,12 @@ enum NotificationPlanner {
         } else {
             proposed = calendar.date(byAdding: .minute, value: reminder.intervalMinutes, to: now) ?? now
         }
-        return preferences.quietHours.nextAllowedDate(proposed, stagger: reminder.kind.quietHoursStagger, calendar: calendar)
+        return ScheduleRules.adjustedDate(proposed, kind: reminder.kind, preferences: preferences, calendar: calendar) ?? proposed
     }
 
     private static func nextFireDate(after fire: Date, reminder: ReminderConfiguration, preferences: AppPreferences, calendar: Calendar) -> Date {
         let proposed = calendar.date(byAdding: .minute, value: reminder.intervalMinutes, to: fire) ?? fire
-        return preferences.quietHours.nextAllowedDate(proposed, stagger: reminder.kind.quietHoursStagger, calendar: calendar)
+        return ScheduleRules.adjustedDate(proposed, kind: reminder.kind, preferences: preferences, calendar: calendar) ?? proposed
     }
 
     private static func notification(for reminder: ReminderConfiguration, fireDate: Date) -> PlannedNotification {

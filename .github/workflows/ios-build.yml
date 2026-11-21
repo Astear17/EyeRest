@@ -162,7 +162,24 @@ jobs:
           test -d "$app_path/vi.lproj"
           test -f "$app_path/en.lproj/Localizable.strings"
           test -f "$app_path/vi.lproj/Localizable.strings"
+          test -f "$app_path/Assets.car"
+          icon_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName' "$app_path/Info.plist")"
+          icon_files="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconFiles' "$app_path/Info.plist")"
+          if [[ "$icon_name" != "AppIcon" ]]; then
+            echo "Expected CFBundleIconName 'AppIcon', found '$icon_name'." >&2
+            exit 1
+          fi
+          if ! grep -q 'AppIcon60x60' <<<"$icon_files"; then
+            echo "CFBundleIconFiles does not name AppIcon60x60: $icon_files" >&2
+            exit 1
+          fi
+          if [[ -f "$app_path/AppIcon60x60@2x.png" ]]; then
+            app_icon_png="present"
+          else
+            app_icon_png="absent"
+          fi
           printf 'Validated bundle metadata: identifier=%s version=%s build=%s executable=%s packageType=%s\n' "$bundle_identifier" "$version" "$build_number" "$executable" "$package_type"
+          printf 'Validated asset catalog: Assets.car=present iconName=%s AppIcon60x60@2x.png=%s\n' "$icon_name" "$app_icon_png"
           /usr/bin/plutil -convert xml1 -o "$ARTIFACT_DIR/${product_name}-Info.plist" "$app_path/Info.plist"
           (
             cd "$(dirname "$app_path")"

@@ -5,7 +5,6 @@ struct HomeView: View {
     @EnvironmentObject private var model: AppViewModel
     @Environment(\.openURL) private var openURL
     @Binding var settingsTab: Int
-    @State private var showingEyeRestSession = false
 
     var body: some View {
         NavigationStack {
@@ -17,10 +16,16 @@ struct HomeView: View {
                     reminderSummary
                     controls
                     Divider()
-                    HStack {
-                        Label("Today", systemImage: "checkmark.circle")
-                        Spacer()
-                        Text("\(model.todayCount) completed").fontWeight(.semibold)
+                    ViewThatFits(in: .horizontal) {
+                        HStack {
+                            Label("Today", systemImage: "checkmark.circle")
+                            Spacer()
+                            todayValues(alignment: .trailing)
+                        }
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label("Today", systemImage: "checkmark.circle")
+                            todayValues(alignment: .leading)
+                        }
                     }
                     .font(.headline)
                     if let queuedUntil = model.queuedUntil {
@@ -40,11 +45,6 @@ struct HomeView: View {
                     Button { settingsTab = 2 } label: { Image(systemName: "gearshape") }
                         .accessibilityLabel("Open settings")
                 }
-            }
-            .sheet(isPresented: $showingEyeRestSession) {
-                EyeRestSessionView(isPresented: $showingEyeRestSession)
-                    .environmentObject(model)
-                    .interactiveDismissDisabled(true)
             }
         }
     }
@@ -67,18 +67,34 @@ struct HomeView: View {
     }
 
     private var controls: some View {
-        HStack(spacing: 12) {
-            Button { model.togglePause() } label: {
+        VStack(spacing: 12) {
+            Menu {
+                if model.isPaused { Button("Resume reminders") { model.resumeReminders() } }
+                Button("Pause for 1 hour") { model.pause(for: 60 * 60) }
+                Button("Pause for rest of today") { model.pauseForRestOfToday() }
+                Button("Pause until I resume") { model.pause(for: nil) }
+            } label: {
                 Label {
-                    Text(model.preferences.isPaused ? String(localized: "Resume") : String(localized: "Pause"))
+                    Text(model.isPaused ? String(localized: "Resume") : String(localized: "Pause"))
                 } icon: {
-                    Image(systemName: model.preferences.isPaused ? "play.fill" : "pause.fill")
+                    Image(systemName: model.isPaused ? "play.fill" : "pause.fill")
                 }
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, minHeight: 44)
             }
             .buttonStyle(.borderedProminent)
-            Button { showingEyeRestSession = true } label: {
-                Label("Eye rest now", systemImage: "eye").frame(maxWidth: .infinity)
+            Button { model.requestBreak(.eyeRest) } label: {
+                Label("Eye rest now", systemImage: "eye").frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .buttonStyle(.bordered)
+            Menu {
+                ForEach(BreakActivity.all) { activity in
+                    Button { model.requestBreak(activity) } label: {
+                        Label(activity.title, systemImage: activity.symbol)
+                    }
+                }
+            } label: {
+                Label("Start a break", systemImage: "play.circle")
+                    .frame(maxWidth: .infinity, minHeight: 44)
             }
             .buttonStyle(.bordered)
         }
@@ -91,20 +107,34 @@ struct HomeView: View {
             Button("Open Settings") {
                 if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
             }
+            .frame(minHeight: 44)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.orange.opacity(0.15), in: RoundedRectangle(cornerRadius: 12))
     }
 
+    private func todayValues(alignment: HorizontalAlignment) -> some View {
+        VStack(alignment: alignment, spacing: 2) {
+            Text("\(model.todayCount) completed").fontWeight(.semibold)
+            Text(String.localizedStringWithFormat(String(localized: "%lld-day streak"), model.currentStreak))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
     private var subtitle: String {
-        if model.preferences.isPaused { return String(localized: "Reminders are paused") }
+        if let pausedUntil = model.preferences.pausedUntil, pausedUntil > .now {
+            if pausedUntil == .distantFuture { return String(localized: "Reminders are paused") }
+            return String.localizedStringWithFormat(String(localized: "Paused until %@"), pausedUntil.formatted(date: .omitted, time: .shortened))
+        }
         guard let reminder = model.nextReminder else { return String(localized: "Enable a reminder to begin") }
         return "\(reminder.kind.title) · \(reminder.nextFireDate?.eyeRestTime ?? "")"
     }
 
     private func countdownText(at date: Date) -> String {
-        if model.preferences.isPaused { return String(localized: "Paused") }
+        if model.isPaused { return String(localized: "Paused") }
         guard !model.enabledReminders.isEmpty else { return "--:--:--" }
         return model.countdownText(to: model.nextDate, now: date)
     }

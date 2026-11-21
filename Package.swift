@@ -15,6 +15,7 @@ let package = Package(
                 "EyeRestApp.swift",
                 "EyeRest.entitlements",
                 "Info.plist",
+                "Assets.xcassets",
                 "Resources",
                 "Utilities",
                 "ViewModels",
@@ -24,8 +25,12 @@ let package = Package(
             sources: [
                 "Models/Reminder.swift",
                 "Models/Completion.swift",
+                "Models/BreakActivity.swift",
+                "Models/BreakSession.swift",
+                "Services/BackupCodec.swift",
                 "Services/NotificationPlanner.swift",
-                "Services/PersistenceService.swift"
+                "Services/PersistenceService.swift",
+                "Services/ScheduleRules.swift"
             ]
         ),
         .testTarget(
