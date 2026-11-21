@@ -2,7 +2,7 @@
 
 This directory is the static GitHub Pages site for EyeRest. It has no build step and makes no runtime requests for fonts, analytics, or application data.
 
-The configured Pages URL is `http://astear17.sino.tw/EyeRest/`; the project base path is `/EyeRest/`. All in-site links are relative so the same files work on the custom Pages path and in a local static server.
+The configured Pages URL is `https://astear17.sino.tw/EyeRest/`; the project base path is `/EyeRest/`. All in-site links are relative so the same files work on the custom Pages path and in a local static server.
 
 Run the dependency-free checks from the repository root:
 

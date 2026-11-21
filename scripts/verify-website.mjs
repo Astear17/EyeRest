@@ -36,7 +36,7 @@ for (const [page, html] of pageSources) {
 
 const sitemap = readFileSync(join(root, 'sitemap.xml'), 'utf8');
 const sitemapURLs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]).sort();
-const expectedURLs = ['http://astear17.sino.tw/EyeRest/', 'http://astear17.sino.tw/EyeRest/install.html', 'http://astear17.sino.tw/EyeRest/privacy.html', 'http://astear17.sino.tw/EyeRest/terms.html'].sort();
+const expectedURLs = ['https://astear17.sino.tw/EyeRest/', 'https://astear17.sino.tw/EyeRest/install.html', 'https://astear17.sino.tw/EyeRest/privacy.html', 'https://astear17.sino.tw/EyeRest/terms.html'].sort();
 if (JSON.stringify(sitemapURLs) !== JSON.stringify(expectedURLs)) throw new Error('Sitemap pages do not match the public page set.');
 
 function assertPNG(path, width, height) {
