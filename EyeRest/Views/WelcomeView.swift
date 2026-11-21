@@ -88,19 +88,22 @@ struct WelcomeView: View {
     private var brandMark: some View {
         ZStack {
             Circle()
-                .stroke(.secondary.opacity(0.35), style: StrokeStyle(lineWidth: 2, dash: [4, 7]))
-            ForEach(0..<8, id: \.self) { index in
-                Circle()
-                    .fill(Color.accentColor)
-                    .frame(width: index.isMultiple(of: 2) ? 9 : 6, height: index.isMultiple(of: 2) ? 9 : 6)
-                    .offset(y: -38)
-                    .rotationEffect(.degrees(Double(index) * 45))
+                .stroke(Color.accentColor, lineWidth: 5)
+            GeometryReader { geometry in
+                Path { path in
+                    let centre = CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2)
+                    path.move(to: centre)
+                    path.addLine(to: CGPoint(x: centre.x, y: geometry.size.height * 0.18))
+                    path.move(to: centre)
+                    path.addLine(to: CGPoint(x: geometry.size.width * 0.72, y: geometry.size.height * 0.68))
+                }
+                .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
             }
             Circle()
-                .fill(Color.accentColor.opacity(0.18))
-                .frame(width: 32, height: 32)
+                .fill(Color.accentColor)
+                .frame(width: 7, height: 7)
         }
-        .frame(width: 92, height: 92)
+        .frame(width: 64, height: 64)
     }
 
     private func benefit(symbol: String, title: LocalizedStringKey, detail: LocalizedStringKey? = nil) -> some View {
