@@ -16,14 +16,15 @@ struct HomeView: View {
                     reminderSummary
                     controls
                     Divider()
-                    HStack {
-                        Label("Today", systemImage: "checkmark.circle")
-                        Spacer()
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text("\(model.todayCount) completed").fontWeight(.semibold)
-                            Text(String.localizedStringWithFormat(String(localized: "%lld-day streak"), model.currentStreak))
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                    ViewThatFits(in: .horizontal) {
+                        HStack {
+                            Label("Today", systemImage: "checkmark.circle")
+                            Spacer()
+                            todayValues(alignment: .trailing)
+                        }
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label("Today", systemImage: "checkmark.circle")
+                            todayValues(alignment: .leading)
                         }
                     }
                     .font(.headline)
@@ -106,10 +107,21 @@ struct HomeView: View {
             Button("Open Settings") {
                 if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
             }
+            .frame(minHeight: 44)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.orange.opacity(0.15), in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func todayValues(alignment: HorizontalAlignment) -> some View {
+        VStack(alignment: alignment, spacing: 2) {
+            Text("\(model.todayCount) completed").fontWeight(.semibold)
+            Text(String.localizedStringWithFormat(String(localized: "%lld-day streak"), model.currentStreak))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .accessibilityElement(children: .combine)
     }
 
     private var subtitle: String {

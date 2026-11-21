@@ -34,6 +34,7 @@ struct ReminderRow: View {
             Image(systemName: reminder.kind.symbol)
                 .frame(width: 24)
                 .foregroundStyle(.tint)
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading) {
                 Text(reminder.kind.title)
@@ -41,6 +42,7 @@ struct ReminderRow: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            .accessibilityElement(children: .combine)
 
             Spacer()
 

@@ -79,6 +79,7 @@ struct EyeRestSessionView: View {
         let stepIndex = session.currentStepIndex(at: date)
         let step = activity.steps[stepIndex]
         let completed = session.state == .completed
+        let diameter = min(ringSize, 240)
 
         return VStack(spacing: 24) {
             ZStack {
@@ -92,7 +93,7 @@ struct EyeRestSessionView: View {
                     .font(.system(.largeTitle, design: .rounded, weight: .semibold))
                     .scaleEffect(completed && completionPulse ? 1.18 : 1)
             }
-            .frame(width: ringSize, height: ringSize)
+            .frame(width: diameter, height: diameter)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(activity.title)
             .accessibilityValue(completed ? String(localized: "Break complete") : String(localized: "\(remaining) seconds remaining"))

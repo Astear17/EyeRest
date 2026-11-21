@@ -47,6 +47,7 @@ struct SettingsView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack {
                             ForEach(1...7, id: \.self) { weekday in
+                                let selected = model.preferences.activeDays.contains(weekday)
                                 Button {
                                     model.updatePreferences { preferences in
                                         if preferences.activeDays.contains(weekday), preferences.activeDays.count > 1 { preferences.activeDays.remove(weekday) }
@@ -54,14 +55,16 @@ struct SettingsView: View {
                                     }
                                 } label: {
                                     HStack(spacing: 3) {
-                                        if model.preferences.activeDays.contains(weekday) { Image(systemName: "checkmark") }
+                                        if selected { Image(systemName: "checkmark") }
                                         Text(Calendar.autoupdatingCurrent.shortWeekdaySymbols[weekday - 1])
                                     }
                                         .frame(minWidth: 36, minHeight: 44)
                                 }
                                 .buttonStyle(.bordered)
                                 .buttonBorderShape(.capsule)
-                                .tint(model.preferences.activeDays.contains(weekday) ? .accentColor : .secondary)
+                                .tint(selected ? .accentColor : .secondary)
+                                .accessibilityLabel(Calendar.autoupdatingCurrent.weekdaySymbols[weekday - 1])
+                                .accessibilityValue(selected ? String(localized: "Selected") : String(localized: "Not selected"))
                             }
                         }
                     }
@@ -81,7 +84,6 @@ struct SettingsView: View {
                     Picker("Theme", selection: Binding(get: { model.preferences.appearance }, set: { value in model.updatePreferences { $0.appearance = value } })) {
                         ForEach(AppPreferences.Appearance.allCases) { Text($0.title).tag($0) }
                     }
-                    .pickerStyle(.segmented)
                     Toggle("Haptics", isOn: Binding(
                         get: { model.preferences.hapticsEnabled },
                         set: { value in model.updatePreferences { $0.hapticsEnabled = value } }

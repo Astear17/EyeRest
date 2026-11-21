@@ -115,12 +115,15 @@ struct ActivityView: View {
     }
 
     private func historyRow(_ event: ActivityEvent) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        let time = event.completedAt.formatted(.dateTime.hour().minute())
+        let duration = durationText(event.durationSeconds)
+        let source = event.source.localizedTitle
+        return VStack(alignment: .leading, spacing: 6) {
             Label(event.kind.title, systemImage: event.kind.symbol)
                 .font(.headline)
-            Text(event.completedAt, format: .dateTime.hour().minute())
-            Text(durationText(event.durationSeconds))
-            Text(event.source.localizedTitle)
+            Text(time)
+            Text(duration)
+            Text(source)
         }
         .font(.subheadline)
         .foregroundStyle(.secondary)
@@ -128,6 +131,13 @@ struct ActivityView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
         .accessibilityElement(children: .combine)
+        .accessibilityLabel(String.localizedStringWithFormat(
+            String(localized: "Activity: %@, %@, %@, %@"),
+            event.kind.title,
+            time,
+            duration,
+            source
+        ))
     }
 
     private var chartDays: [ChartDay] {
@@ -153,11 +163,12 @@ struct ActivityView: View {
     private var chartAccessibilityDescription: String {
         let details = chartDays.map { day in
             let date = day.date.formatted(.dateTime.weekday(.wide))
-            return String.localizedStringWithFormat(
-                String(localized: "%@: %lld completions"),
-                date,
-                day.total.completionCount
-            )
+            let kinds = ReminderKind.allCases.compactMap { kind -> String? in
+                let count = day.total.countsByKind[kind, default: 0]
+                guard count > 0 else { return nil }
+                return String.localizedStringWithFormat(String(localized: "%@: %lld completions"), kind.title, count)
+            }.joined(separator: ", ")
+            return kinds.isEmpty ? date : "\(date) — \(kinds)"
         }.joined(separator: ", ")
         return String.localizedStringWithFormat(String(localized: "Last 7 days: %@"), details)
     }

@@ -17,6 +17,7 @@ const required = [
   'EyeRest/Resources/Localizable.xcstrings',
   'EyeRest/EyeRestApp.swift', 'EyeRest/Services/NotificationService.swift', 'EyeRest/Services/PersistenceService.swift',
   'EyeRest/ViewModels/AppViewModel.swift', 'docs/IOS_DEVELOPMENT.md', 'docs/IOS_BUILD.md',
+  'docs/RELEASE_CHECKLIST.md',
   'EyeRest/Services/BackupCodec.swift', 'EyeRest/Utilities/BackupDocument.swift', 'docs/DATA_FORMAT.md',
   'EyeRest/Services/ScheduleRules.swift',
   'EyeRest/Models/BreakActivity.swift',
