@@ -15,6 +15,7 @@ let package = Package(
                 "EyeRestApp.swift",
                 "EyeRest.entitlements",
                 "Info.plist",
+                "Assets.xcassets",
                 "Resources",
                 "Utilities",
                 "ViewModels",
