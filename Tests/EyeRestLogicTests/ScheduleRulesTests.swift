@@ -8,7 +8,7 @@ final class ScheduleRulesTests: XCTestCase {
         var preferences = AppPreferences.makeDefault(now: friday)
         preferences.activeDays = [2, 3, 4, 5, 6]
         preferences.quietHours = QuietHours(enabled: true, startMinutes: 18 * 60, endMinutes: 9 * 60)
-        preferences.pausedUntil = testDate(2026, 11, 21, 10, 0, calendar: calendar)
+        preferences.pausedUntil = testDate(2026, 11, 21, 7, 0, calendar: calendar)
 
         let result = ScheduleRules.adjustedDate(friday, kind: .eyeRest, preferences: preferences, calendar: calendar)
 
