@@ -19,6 +19,7 @@ const required = [
   'Tests/EyeRestLogicTests/BreakSessionTests.swift',
   'Tests/EyeRestLogicTests/QuietHoursTests.swift',
   'Tests/EyeRestLogicTests/MedicineTests.swift',
+  'Tests/EyeRestLogicTests/MedicineNotificationPlannerTests.swift',
   'EyeRest/Resources/Localizable.xcstrings',
   'EyeRest/EyeRestApp.swift', 'EyeRest/Services/NotificationService.swift', 'EyeRest/Services/PersistenceService.swift',
   'EyeRest/ViewModels/AppViewModel.swift', 'docs/IOS_DEVELOPMENT.md', 'docs/IOS_BUILD.md',
