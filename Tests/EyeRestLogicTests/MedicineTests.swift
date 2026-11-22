@@ -14,7 +14,7 @@ final class MedicineModelTests: XCTestCase {
         XCTAssertThrowsError(try makeReminder(times: [60, 60]))
         XCTAssertThrowsError(try makeReminder(times: [1_440]))
         XCTAssertThrowsError(try makeReminder(repeatRule: .weekdays([])))
-        XCTAssertThrowsError(try makeReminder(endDay: MedicineDay(year: 2026, month: 1, day: 1), startDay: MedicineDay(year: 2026, month: 1, day: 2)))
+        XCTAssertThrowsError(try makeReminder(startDay: MedicineDay(year: 2026, month: 1, day: 2), endDay: MedicineDay(year: 2026, month: 1, day: 1)))
         XCTAssertThrowsError(try makeReminder(snoozeMinutes: 7))
     }
 
@@ -219,8 +219,8 @@ private func makeReminder(
     name: String = "Medicine",
     times: [Int] = [8 * 60],
     repeatRule: MedicineRepeatRule = .daily,
-    endDay: MedicineDay? = nil,
     startDay: MedicineDay = MedicineDay(year: 2026, month: 1, day: 2),
+    endDay: MedicineDay? = nil,
     snoozeMinutes: Int = 10
 ) throws -> MedicineReminder {
     try MedicineReminder(
