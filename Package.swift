@@ -27,7 +27,10 @@ let package = Package(
                 "Models/Completion.swift",
                 "Models/BreakActivity.swift",
                 "Models/BreakSession.swift",
+                "Models/Medicine.swift",
                 "Services/BackupCodec.swift",
+                "Services/MedicineSchedule.swift",
+                "Services/MedicineStore.swift",
                 "Services/NotificationPlanner.swift",
                 "Services/PersistenceService.swift",
                 "Services/ScheduleRules.swift"
