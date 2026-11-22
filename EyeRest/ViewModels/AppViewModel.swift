@@ -132,7 +132,7 @@ final class AppViewModel: ObservableObject {
         let replacementPreferences = preview.backup.settings.preferences()
         let replacementActivity = BackupCodec.mergedActivity(current: activityLog, imported: preview.backup.activity.log)
         let replacementMedicine = BackupCodec.mergedMedicine(current: medicineData, imported: preview.backup.medicine)
-        let snapshot = (preferences, activityLog, medicineData)
+        let snapshot = (preferences: preferences, activityLog: activityLog, medicineData: medicineData)
         do {
             try activityStore.save(replacementActivity)
             try medicineStore.save(replacementMedicine)
