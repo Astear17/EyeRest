@@ -6,14 +6,18 @@ import UserNotifications
 final class AppViewModel: ObservableObject {
     @Published private(set) var preferences: AppPreferences
     @Published private(set) var activityLog: ActivityLog
+    @Published private(set) var medicineData: MedicineData
     @Published private(set) var authorizationStatus: UNAuthorizationStatus = .notDetermined
     @Published private(set) var isTimeSensitiveAvailable = false
     @Published private(set) var queuedUntil: Date?
+    @Published private(set) var medicineQueuedUntil: Date?
     @Published private(set) var canUndoImport = false
     @Published private(set) var requestedBreakActivity: BreakActivity?
+    @Published private(set) var requestedMedicineDose: MedicineDoseIdentity?
     @Published var showPermissionAlert = false
     private let persistence = PersistenceService()
     private let activityStore = ActivityStore()
+    private let medicineStore = MedicineStore()
     private let notifications = NotificationService.shared
     private var tick: Timer?
     private var observationTokens: [NSObjectProtocol] = []
@@ -24,7 +28,11 @@ final class AppViewModel: ObservableObject {
     init() {
         preferences = persistence.loadPreferences()
         activityLog = activityStore.load()
+        medicineData = medicineStore.load()
         notifications.actionHandler = { [weak self] kind, action in self?.handle(kind: kind, action: action) }
+        notifications.medicineActionHandler = { [weak self] response in
+            await self?.handleMedicine(response)
+        }
         observeSystemChanges()
         startClock()
     }
@@ -157,6 +165,7 @@ final class AppViewModel: ObservableObject {
 
     func requestBreak(_ activity: BreakActivity) { requestedBreakActivity = activity }
     func consumeRequestedBreak() { requestedBreakActivity = nil }
+    func consumeRequestedMedicineDose() { requestedMedicineDose = nil }
 
     func resetDefaults() {
         preferences.reminders = AppPreferences.makeDefault().reminders
@@ -205,13 +214,15 @@ final class AppViewModel: ObservableObject {
         persistence.save(preferences)
         guard canScheduleNotifications else {
             queuedUntil = nil
+            medicineQueuedUntil = nil
             return
         }
-        let planned = await notifications.reschedule(preferences: preferences)
+        let planned = await notifications.reschedule(preferences: preferences, medicineData: medicineData)
         let lastDates = enabledReminders.compactMap { reminder in
-            planned.last(where: { $0.kind == reminder.kind })?.fireDate
+            planned.wellness.last(where: { $0.kind == reminder.kind })?.fireDate
         }
         queuedUntil = lastDates.min()
+        medicineQueuedUntil = planned.medicine.last?.scheduledAt
     }
 
     private func adjustedDate(for kind: ReminderKind, intervalMinutes: Int, now: Date = .now) -> Date {
@@ -276,5 +287,71 @@ final class AppViewModel: ObservableObject {
                 let activity = BreakActivity.defaultActivity(for: kind) {
             requestBreak(activity)
         }
+    }
+
+    private func handleMedicine(_ response: MedicineNotificationResponse) async {
+        if response.action == UNNotificationDefaultActionIdentifier {
+            requestedMedicineDose = MedicineDoseIdentity(medicineID: response.medicineID, scheduledAt: response.scheduledAt)
+            return
+        }
+        let action: MedicineLogAction
+        switch response.action {
+        case NotificationService.medicineTakenAction:
+            action = .taken
+        case NotificationService.medicineSkipAction:
+            action = .skipped
+        case NotificationService.medicineSnoozeAction:
+            action = .snoozed
+        default:
+            return
+        }
+        await markMedicineDose(
+            medicineID: response.medicineID,
+            scheduledAt: response.scheduledAt,
+            action: action,
+            deliveredRequestID: response.requestIdentifier
+        )
+    }
+
+    func markMedicineDose(
+        medicineID: UUID,
+        scheduledAt: Date,
+        action: MedicineLogAction,
+        deliveredRequestID: String? = nil,
+        now: Date = .now
+    ) async {
+        guard let reminder = medicineData.reminders.first(where: { $0.id == medicineID }) else { return }
+        let snoozeMinutes = action == .snoozed ? reminder.snoozeMinutes : nil
+        guard let entry = try? MedicineLogEntry(
+            medicineID: medicineID,
+            nameSnapshot: reminder.name,
+            scheduledAt: scheduledAt,
+            markedAt: now,
+            action: action,
+            snoozeMinutes: snoozeMinutes
+        ) else { return }
+        var updated = medicineData
+        updated.log.append(entry)
+        if updated.log.count > MedicineStore.maximumLogEntries {
+            updated.log = Array(updated.log.sorted { $0.markedAt < $1.markedAt }.suffix(MedicineStore.maximumLogEntries))
+        }
+        do { try medicineStore.save(updated) } catch { return }
+        medicineData = updated
+        notifications.clearMedicineDose(
+            medicineID: medicineID,
+            scheduledAt: scheduledAt,
+            deliveredRequestID: deliveredRequestID
+        )
+        if action == .snoozed, let snoozeMinutes {
+            await notifications.scheduleMedicineSnooze(
+                medicineID: medicineID,
+                name: reminder.name,
+                scheduledAt: scheduledAt,
+                fireDate: NotificationPlanner.medicineSnoozeDate(now: now, minutes: snoozeMinutes),
+                snoozeMinutes: snoozeMinutes,
+                hideName: medicineData.hideNamesInNotifications
+            )
+        }
+        await reconcile()
     }
 }
