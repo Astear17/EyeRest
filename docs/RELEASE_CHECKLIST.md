@@ -52,6 +52,14 @@ Complete this checklist on a physical iPhone running iOS 17 or later. Record the
 - [ ] Inspect the preview, import it, and confirm settings/history are restored without importing notification permission or pending alerts.
 - [ ] Use **Undo last import** once and confirm the pre-import data returns; confirm the undo is not reusable.
 - [ ] Try a damaged or modified backup and confirm no existing data changes.
+- [ ] Import a version 1 backup and confirm current medicine data is unchanged; export/import version 2 and confirm medicine reminders and history return.
+
+## Medicine reminders
+
+- [ ] Test does-not-repeat, every-day, and selected-weekday rules, including several doses and same-time medicines.
+- [ ] Mark Taken, Skipped, and Snooze (5, 10, and 15 minutes) in-app and from notifications; reopen after snoozing and verify history.
+- [ ] Test late marking, enable/disable, edit, delete with retained history, and an end date passing.
+- [ ] Test hide-names notifications, Focus behavior, a time-zone change, the queue warning, and free-signing expiry behavior.
 
 ## Distribution record
 

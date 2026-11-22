@@ -1,6 +1,8 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%lld medicine reminders and %lld medicine events" : { "localizations" : { "vi" : { "stringUnit" : { "state" : "translated", "value" : "%lld nhắc uống thuốc và %lld sự kiện thuốc" } }, "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld medicine reminders and %lld medicine events" } } } },
+    "Backups include settings, activity history, medicine reminders and medicine history. Notification permission and scheduled alerts are never included." : { "localizations" : { "vi" : { "stringUnit" : { "state" : "translated", "value" : "Bản sao lưu gồm cài đặt, lịch sử hoạt động, nhắc uống thuốc và lịch sử thuốc. Quyền thông báo và các thông báo đã lên lịch không bao giờ được đưa vào." } }, "en" : { "stringUnit" : { "state" : "translated", "value" : "Backups include settings, activity history, medicine reminders and medicine history. Notification permission and scheduled alerts are never included." } } } },
     "Add" : { "localizations" : { "vi" : { "stringUnit" : { "state" : "translated", "value" : "Thêm" } }, "en" : { "stringUnit" : { "state" : "translated", "value" : "Add" } } } },
     "Add a medicine and choose when EyeRest should remind you." : { "localizations" : { "vi" : { "stringUnit" : { "state" : "translated", "value" : "Thêm thuốc và chọn thời điểm EyeRest nên nhắc bạn." } }, "en" : { "stringUnit" : { "state" : "translated", "value" : "Add a medicine and choose when EyeRest should remind you." } } } },
     "Add medicine" : { "localizations" : { "vi" : { "stringUnit" : { "state" : "translated", "value" : "Thêm thuốc" } }, "en" : { "stringUnit" : { "state" : "translated", "value" : "Add medicine" } } } },

@@ -96,7 +96,31 @@ struct EyeRestBackup: Codable, Equatable {
     let exportedAt: Date
     let settings: BackupSettings
     let activity: BackupActivity
+    let medicine: BackupMedicine?
     let payloadSHA256: String
+}
+
+struct BackupMedicine: Codable, Equatable {
+    let reminders: [MedicineReminder]
+    let log: [MedicineLogEntry]
+    let hideNamesInNotifications: Bool
+    let hasAcknowledgedNotice: Bool
+
+    init(data: MedicineData) {
+        reminders = data.reminders
+        log = data.log
+        hideNamesInNotifications = data.hideNamesInNotifications
+        hasAcknowledgedNotice = data.hasAcknowledgedNotice
+    }
+
+    var data: MedicineData {
+        MedicineData(
+            reminders: reminders,
+            log: log,
+            hasAcknowledgedNotice: hasAcknowledgedNotice,
+            hideNamesInNotifications: hideNamesInNotifications
+        )
+    }
 }
 
 struct BackupPreview: Equatable {
@@ -105,6 +129,8 @@ struct BackupPreview: Equatable {
     let dailyTotalCount: Int
     let earliestDate: Date?
     let latestDate: Date?
+    let medicineReminderCount: Int
+    let medicineLogCount: Int
 }
 
 enum BackupCodecError: Error, Equatable {
@@ -117,11 +143,12 @@ enum BackupCodecError: Error, Equatable {
 
 enum BackupCodec {
     static let format = "com.astear17.eyerest.backup"
-    static let schemaVersion = 1
+    static let schemaVersion = 2
 
     static func encode(
         preferences: AppPreferences,
         activityLog: ActivityLog,
+        medicineData: MedicineData = MedicineData(),
         appVersion: String,
         exportedAt: Date = .now
     ) throws -> Data {
@@ -131,7 +158,8 @@ enum BackupCodec {
             appVersion: appVersion,
             exportedAt: exportedAt,
             settings: BackupSettings(preferences: preferences),
-            activity: BackupActivity(log: activityLog)
+            activity: BackupActivity(log: activityLog),
+            medicine: BackupMedicine(data: medicineData)
         )
         let checksum = SHA256.hexDigest(try canonicalData(unsigned))
         let backup = EyeRestBackup(
@@ -141,6 +169,7 @@ enum BackupCodec {
             exportedAt: unsigned.exportedAt,
             settings: unsigned.settings,
             activity: unsigned.activity,
+            medicine: unsigned.medicine,
             payloadSHA256: checksum
         )
         return try canonicalData(backup)
@@ -152,14 +181,15 @@ enum BackupCodec {
         catch { throw BackupCodecError.invalidJSON }
         guard backup.format == format else { throw BackupCodecError.wrongFormat }
         guard backup.schemaVersion <= schemaVersion else { throw BackupCodecError.newerSchema(backup.schemaVersion) }
-        guard backup.schemaVersion == schemaVersion else { throw BackupCodecError.invalidValue("schemaVersion") }
+        guard backup.schemaVersion >= 1 else { throw BackupCodecError.invalidValue("schemaVersion") }
         let unsigned = UnsignedBackup(
             format: backup.format,
             schemaVersion: backup.schemaVersion,
             appVersion: backup.appVersion,
             exportedAt: backup.exportedAt,
             settings: backup.settings,
-            activity: backup.activity
+            activity: backup.activity,
+            medicine: backup.medicine
         )
         guard SHA256.hexDigest(try canonicalData(unsigned)) == backup.payloadSHA256.lowercased() else {
             throw BackupCodecError.checksumMismatch
@@ -171,7 +201,9 @@ enum BackupCodec {
             eventCount: backup.activity.events.count,
             dailyTotalCount: backup.activity.dailyTotals.count,
             earliestDate: dates.min(),
-            latestDate: dates.max()
+            latestDate: dates.max(),
+            medicineReminderCount: backup.medicine?.reminders.count ?? 0,
+            medicineLogCount: backup.medicine?.log.count ?? 0
         )
     }
 
@@ -194,6 +226,18 @@ enum BackupCodec {
         return ActivityLog(
             events: eventsByID.values.sorted { $0.completedAt < $1.completedAt },
             dailyTotals: totalsByDay.values.sorted { $0.dayKey < $1.dayKey }
+        )
+    }
+
+    static func mergedMedicine(current: MedicineData, imported: BackupMedicine?) -> MedicineData {
+        guard let imported else { return current }
+        var entriesByID = Dictionary(uniqueKeysWithValues: current.log.map { ($0.id, $0) })
+        for entry in imported.log { entriesByID[entry.id] = entriesByID[entry.id] ?? entry }
+        return MedicineData(
+            reminders: imported.reminders,
+            log: entriesByID.values.sorted { $0.markedAt < $1.markedAt },
+            hasAcknowledgedNotice: imported.hasAcknowledgedNotice,
+            hideNamesInNotifications: imported.hideNamesInNotifications
         )
     }
 
@@ -225,6 +269,13 @@ enum BackupCodec {
         }
         guard Set(backup.activity.dailyTotals.map(\.dayKey)).count == backup.activity.dailyTotals.count else {
             throw BackupCodecError.invalidValue("duplicateDayKey")
+        }
+        if let medicine = backup.medicine {
+            guard Set(medicine.reminders.map(\.id)).count == medicine.reminders.count,
+                  Set(medicine.log.map(\.id)).count == medicine.log.count,
+                  medicine.log.count <= MedicineStore.maximumLogEntries else {
+                throw BackupCodecError.invalidValue("medicine")
+            }
         }
         for event in backup.activity.events {
             guard validDayKey(event.dayKey), (0...86_400).contains(event.durationSeconds) else {
@@ -271,6 +322,7 @@ enum BackupCodec {
         let exportedAt: Date
         let settings: BackupSettings
         let activity: BackupActivity
+        let medicine: BackupMedicine?
     }
 }
 

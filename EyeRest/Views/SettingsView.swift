@@ -109,7 +109,7 @@ struct SettingsView: View {
                             catch { dataError = String(localized: "The previous data could not be restored.") }
                         }
                     }
-                    Text("Backups include settings and activity history. Notification permission and scheduled alerts are never included.")
+                    Text("Backups include settings, activity history, medicine reminders and medicine history. Notification permission and scheduled alerts are never included.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -220,12 +220,18 @@ struct SettingsView: View {
         } else {
             range = String(localized: "No activity dates")
         }
-        return String.localizedStringWithFormat(
+        let activity = String.localizedStringWithFormat(
             String(localized: "%lld activities across %lld days\n%@"),
             preview.eventCount,
             preview.dailyTotalCount,
             range
         )
+        let medicine = String.localizedStringWithFormat(
+            String(localized: "%lld medicine reminders and %lld medicine events"),
+            preview.medicineReminderCount,
+            preview.medicineLogCount
+        )
+        return "\(activity)\n\(medicine)"
     }
 
     private func importErrorMessage(_ error: BackupCodecError) -> String {
