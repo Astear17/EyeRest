@@ -90,6 +90,16 @@ struct SettingsView: View {
                     ))
                 }
 
+                Section("Medicine reminders") {
+                    Toggle("Hide medicine names in notifications", isOn: Binding(
+                        get: { model.medicineData.hideNamesInNotifications },
+                        set: { model.setHideMedicineNames($0) }
+                    ))
+                    Text("When enabled, medicine notifications use a generic title and message.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section("Data") {
                     Button("Export backup") { prepareExport() }
                     Button("Import backup") { showingImporter = true }

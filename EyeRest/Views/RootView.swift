@@ -14,6 +14,11 @@ struct RootView: View {
         }
         .onAppear { presentRequestedBreak() }
         .onChange(of: model.requestedBreakActivity) { _, _ in presentRequestedBreak() }
+        .onChange(of: model.requestedMedicineDose) { _, requested in
+            if requested != nil {
+                tab = 4
+            }
+        }
         .sheet(item: $selectedActivity) { activity in
             EyeRestSessionView(activity: activity)
                 .environmentObject(model)
@@ -27,6 +32,7 @@ struct RootView: View {
             RemindersView().tabItem { Label("Reminders", systemImage: "bell") }.tag(1)
             SettingsView().tabItem { Label("Settings", systemImage: "gearshape") }.tag(2)
             ActivityView().tabItem { Label("Activity", systemImage: "chart.bar") }.tag(3)
+            MedicineView().tabItem { Label("Medicine", systemImage: "pills") }.tag(4)
         }
     }
 

@@ -34,6 +34,7 @@ const required = [
   'Tests/EyeRestLogicTests/BreakActivityTests.swift',
   'EyeRest/Views/ActivityView.swift',
   'EyeRest/Views/WelcomeView.swift',
+  'EyeRest/Views/MedicineView.swift',
   'design/source/eye-clock.png', 'design/app-icon.svg', 'scripts/analyze-eye-clock.mjs',
   'scripts/generate-app-icon.mjs', 'EyeRest/Assets.xcassets/Contents.json',
   'EyeRest/Assets.xcassets/AccentColor.colorset/Contents.json', 'EyeRest/Assets.xcassets/AppIcon.appiconset/Contents.json',
@@ -123,7 +124,7 @@ for (const [key, value] of Object.entries(stringCatalog.strings)) {
   if (value.localizations?.vi?.stringUnit?.state !== 'translated' || !value.localizations.vi.stringUnit.value) throw new Error(`Missing Vietnamese translation: ${key}`);
   if (value.localizations?.en?.stringUnit?.state !== 'translated' || value.localizations.en.stringUnit.value !== key) throw new Error(`Missing English source localization: ${key}`);
 }
-for (const key of ['Every %lld min · %@', 'Interval: %lld minutes', '%lld completed', '%lld seconds remaining', '%@ enabled', 'Countdown %@', 'Reminders are queued until %@. Open EyeRest to keep them going.', 'Snooze %lld min', '%u more reminders', '%lld-day streak', '%lld days', '%@ min', '%@: %lld completions', 'Last 7 days: %@', '%lld min', '%lld sec']) {
+for (const key of ['Every %lld min · %@', 'Interval: %lld minutes', '%lld completed', '%lld seconds remaining', '%@ enabled', 'Countdown %@', 'Reminders are queued until %@. Open EyeRest to keep them going.', 'Snooze %lld min', '%u more reminders', '%lld-day streak', '%lld days', '%@ min', '%@: %lld completions', 'Last 7 days: %@', '%lld min', '%lld sec', 'Medicine reminders are queued until %@.', 'Marked %@', 'Snoozed for %lld min', 'Snoozed until %@', 'Time %lld']) {
   if (!stringCatalog.strings[key]?.localizations?.vi?.stringUnit?.value) throw new Error(`Missing interpolated Vietnamese catalog key: ${key}`);
 }
 if (!notificationService.includes('timeSensitiveSetting') || !notificationService.includes('pendingNotificationRequests')) throw new Error('Expected local-notification scheduling safeguards are missing.');
