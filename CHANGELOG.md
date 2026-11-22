@@ -13,6 +13,7 @@ All notable EyeRest changes are recorded here. The project has not yet published
 - Activity streaks, weekly totals, accessible chart, and 30-day history.
 - Localized welcome flow, English and Vietnamese strings, and the eye-clock app icon with light, dark, and tinted variants.
 - Unsigned CI IPA packaging, checksum output, and tag-gated release automation.
+- Offline medicine reminders with local Taken, Skipped, and Snoozed history, notification actions, privacy controls, and version 2 backups.
 
 ### Changed
 

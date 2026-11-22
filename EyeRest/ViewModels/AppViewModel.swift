@@ -23,7 +23,7 @@ final class AppViewModel: ObservableObject {
     private var observationTokens: [NSObjectProtocol] = []
     private var reconcileTask: Task<Void, Never>?
     private var reconcilePending = false
-    private var preImportSnapshot: (preferences: AppPreferences, activityLog: ActivityLog)?
+    private var preImportSnapshot: (preferences: AppPreferences, activityLog: ActivityLog, medicineData: MedicineData)?
 
     init() {
         preferences = persistence.loadPreferences()
@@ -120,6 +120,7 @@ final class AppViewModel: ObservableObject {
         try BackupCodec.encode(
             preferences: preferences,
             activityLog: activityLog,
+            medicineData: medicineData,
             appVersion: appVersion,
             exportedAt: exportedAt
         )
@@ -130,11 +131,21 @@ final class AppViewModel: ObservableObject {
     func applyBackup(_ preview: BackupPreview) throws {
         let replacementPreferences = preview.backup.settings.preferences()
         let replacementActivity = BackupCodec.mergedActivity(current: activityLog, imported: preview.backup.activity.log)
-        let snapshot = (preferences, activityLog)
-        try activityStore.save(replacementActivity)
-        persistence.save(replacementPreferences)
+        let replacementMedicine = BackupCodec.mergedMedicine(current: medicineData, imported: preview.backup.medicine)
+        let snapshot = (preferences: preferences, activityLog: activityLog, medicineData: medicineData)
+        do {
+            try activityStore.save(replacementActivity)
+            try medicineStore.save(replacementMedicine)
+            persistence.save(replacementPreferences)
+        } catch {
+            try? activityStore.save(snapshot.activityLog)
+            try? medicineStore.save(snapshot.medicineData)
+            persistence.save(snapshot.preferences)
+            throw error
+        }
         preferences = replacementPreferences
         activityLog = replacementActivity
+        medicineData = replacementMedicine
         preImportSnapshot = snapshot
         canUndoImport = true
         notifications.configureCategories(snoozeMinutes: preferences.snoozeMinutes)
@@ -144,9 +155,11 @@ final class AppViewModel: ObservableObject {
     func undoLastImport() throws {
         guard let snapshot = preImportSnapshot else { return }
         try activityStore.save(snapshot.activityLog)
+        try medicineStore.save(snapshot.medicineData)
         persistence.save(snapshot.preferences)
         preferences = snapshot.preferences
         activityLog = snapshot.activityLog
+        medicineData = snapshot.medicineData
         preImportSnapshot = nil
         canUndoImport = false
         notifications.configureCategories(snoozeMinutes: preferences.snoozeMinutes)

@@ -12,8 +12,9 @@ EyeRest is a native, offline-first iOS 17+ app for gentle wellness reminders and
 - Activity streaks, weekly break time, a seven-day chart, and 30-day history.
 - Local JSON backup export and validated import with one-use undo.
 - English and Vietnamese localization.
+- Offline medicine reminders with local Taken, Skipped, and Snoozed history and optional hidden names in notifications.
 
-EyeRest provides general wellness prompts, not medical advice. iOS may delay or suppress notifications because of Focus, notification settings, system policy, or an expired app signature.
+EyeRest provides general wellness prompts and convenience medicine reminders, not medical advice. Do not rely on it alone for important medication. iOS may delay or suppress notifications because of Focus, notification settings, system policy, or an expired app signature.
 
 ## Install on an iPhone
 
