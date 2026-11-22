@@ -167,6 +167,36 @@ final class AppViewModel: ObservableObject {
     func consumeRequestedBreak() { requestedBreakActivity = nil }
     func consumeRequestedMedicineDose() { requestedMedicineDose = nil }
 
+    func acknowledgeMedicineNotice() {
+        medicineData.hasAcknowledgedNotice = true
+        saveMedicineDataAndReconcile()
+    }
+
+    func saveMedicineReminder(_ reminder: MedicineReminder) {
+        if let index = medicineData.reminders.firstIndex(where: { $0.id == reminder.id }) {
+            medicineData.reminders[index] = reminder
+        } else {
+            medicineData.reminders.append(reminder)
+        }
+        saveMedicineDataAndReconcile()
+    }
+
+    func setMedicineReminder(_ id: UUID, enabled: Bool) {
+        guard let index = medicineData.reminders.firstIndex(where: { $0.id == id }) else { return }
+        medicineData.reminders[index].isEnabled = enabled
+        saveMedicineDataAndReconcile()
+    }
+
+    func deleteMedicineReminder(_ id: UUID) {
+        medicineData.reminders.removeAll { $0.id == id }
+        saveMedicineDataAndReconcile()
+    }
+
+    func setHideMedicineNames(_ hidden: Bool) {
+        medicineData.hideNamesInNotifications = hidden
+        saveMedicineDataAndReconcile()
+    }
+
     func resetDefaults() {
         preferences.reminders = AppPreferences.makeDefault().reminders
         saveAndReschedule()
@@ -251,6 +281,11 @@ final class AppViewModel: ObservableObject {
 
     private func saveAndReschedule() {
         persistence.save(preferences)
+        Task { await reconcile() }
+    }
+
+    private func saveMedicineDataAndReconcile() {
+        do { try medicineStore.save(medicineData) } catch { return }
         Task { await reconcile() }
     }
 
